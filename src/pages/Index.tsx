@@ -1,41 +1,40 @@
 import { useState } from "react";
 import { StartScreen } from "@/components/StartScreen";
-import { FoundersStory } from "@/components/FoundersStory";
-import { GamePlay } from "@/components/GamePlay";
-import { StoryReveal } from "@/components/StoryReveal";
-import { ProgressMap } from "@/components/ProgressMap";
+import { EndlessRunner } from "@/components/EndlessRunner";
+import { TopicReveal } from "@/components/TopicReveal";
+import { TopicsLibrary } from "@/components/TopicsLibrary";
 
-type Screen = "start" | "founders" | "game" | "story" | "map";
+type Screen = "start" | "game" | "reveal" | "library";
 
 const Index = () => {
   const [screen, setScreen] = useState<Screen>("start");
-  const [level, setLevel] = useState(1);
-  const [lastStoryId, setLastStoryId] = useState(1);
+  const [lastScore, setLastScore] = useState(0);
+  const [lastTopicId, setLastTopicId] = useState(1);
+  const [highScore, setHighScore] = useState(0);
 
   const handleStart = () => {
     setScreen("game");
   };
 
-  const handleViewStories = () => {
-    setScreen("founders");
-  };
-
-  const handleViewMap = () => {
-    setScreen("map");
+  const handleViewTopics = () => {
+    setScreen("library");
   };
 
   const handleBackToStart = () => {
     setScreen("start");
   };
 
-  const handleLevelComplete = (storyId: number) => {
-    setLastStoryId(storyId);
-    setScreen("story");
+  const handleGameOver = (score: number, topicId: number) => {
+    setLastScore(score);
+    setLastTopicId(topicId);
+    if (score > highScore) {
+      setHighScore(score);
+    }
+    setScreen("reveal");
   };
 
-  const handleContinueFromStory = () => {
-    setLevel((prev) => prev + 1);
-    setScreen("game");
+  const handleContinueFromReveal = () => {
+    setScreen("start");
   };
 
   return (
@@ -43,24 +42,21 @@ const Index = () => {
       {screen === "start" && (
         <StartScreen
           onStart={handleStart}
-          onViewStories={handleViewStories}
-          onViewMap={handleViewMap}
+          onViewTopics={handleViewTopics}
+          highScore={highScore}
         />
       )}
-      {screen === "founders" && <FoundersStory onBack={handleBackToStart} />}
       {screen === "game" && (
-        <GamePlay
-          level={level}
-          onBack={handleBackToStart}
-          onLevelComplete={handleLevelComplete}
+        <EndlessRunner onGameOver={handleGameOver} onHome={handleBackToStart} />
+      )}
+      {screen === "reveal" && (
+        <TopicReveal
+          topicId={lastTopicId}
+          score={lastScore}
+          onContinue={handleContinueFromReveal}
         />
       )}
-      {screen === "story" && (
-        <StoryReveal storyId={lastStoryId} onContinue={handleContinueFromStory} />
-      )}
-      {screen === "map" && (
-        <ProgressMap currentLevel={level} onBack={handleBackToStart} />
-      )}
+      {screen === "library" && <TopicsLibrary onBack={handleBackToStart} />}
     </>
   );
 };
