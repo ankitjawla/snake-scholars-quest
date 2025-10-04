@@ -1,64 +1,65 @@
 import { useState } from "react";
-import { Hero } from "@/components/Hero";
+import { StartScreen } from "@/components/StartScreen";
 import { FoundersStory } from "@/components/FoundersStory";
-import { DifficultySelect } from "@/components/DifficultySelect";
-import { GameCanvas } from "@/components/GameCanvas";
-import { LevelTransition } from "@/components/LevelTransition";
+import { GamePlay } from "@/components/GamePlay";
+import { StoryReveal } from "@/components/StoryReveal";
+import { ProgressMap } from "@/components/ProgressMap";
 
-type Screen = "hero" | "story" | "difficulty" | "game" | "transition";
-type Difficulty = "easy" | "medium" | "hard";
+type Screen = "start" | "founders" | "game" | "story" | "map";
 
 const Index = () => {
-  const [screen, setScreen] = useState<Screen>("hero");
+  const [screen, setScreen] = useState<Screen>("start");
   const [level, setLevel] = useState(1);
-  const [difficulty, setDifficulty] = useState<Difficulty>("medium");
+  const [lastStoryId, setLastStoryId] = useState(1);
 
-  const handleStartGame = () => {
-    setScreen("difficulty");
-  };
-
-  const handleDifficultySelect = (selectedDifficulty: Difficulty) => {
-    setDifficulty(selectedDifficulty);
-    setLevel(1);
+  const handleStart = () => {
     setScreen("game");
   };
 
-  const handleLearnMore = () => {
+  const handleViewStories = () => {
+    setScreen("founders");
+  };
+
+  const handleViewMap = () => {
+    setScreen("map");
+  };
+
+  const handleBackToStart = () => {
+    setScreen("start");
+  };
+
+  const handleLevelComplete = (storyId: number) => {
+    setLastStoryId(storyId);
     setScreen("story");
   };
 
-  const handleBackToHero = () => {
-    setScreen("hero");
-  };
-
-  const handleLevelComplete = () => {
-    setScreen("transition");
-  };
-
-  const handleContinueToNextLevel = () => {
+  const handleContinueFromStory = () => {
     setLevel((prev) => prev + 1);
     setScreen("game");
   };
 
   return (
     <>
-      {screen === "hero" && (
-        <Hero onStartGame={handleStartGame} onLearnMore={handleLearnMore} />
+      {screen === "start" && (
+        <StartScreen
+          onStart={handleStart}
+          onViewStories={handleViewStories}
+          onViewMap={handleViewMap}
+        />
       )}
-      {screen === "story" && <FoundersStory onBack={handleBackToHero} />}
-      {screen === "difficulty" && (
-        <DifficultySelect onSelect={handleDifficultySelect} onBack={handleBackToHero} />
-      )}
+      {screen === "founders" && <FoundersStory onBack={handleBackToStart} />}
       {screen === "game" && (
-        <GameCanvas
+        <GamePlay
           level={level}
-          difficulty={difficulty}
-          onBack={handleBackToHero}
+          onBack={handleBackToStart}
           onLevelComplete={handleLevelComplete}
         />
       )}
-      {screen === "transition" && (
-        <LevelTransition level={level} onContinue={handleContinueToNextLevel} />
+      {screen === "story" && (
+        <StoryReveal storyId={lastStoryId} onContinue={handleContinueFromStory} />
+      )}
+      {screen === "map" && (
+        <ProgressMap currentLevel={level} onBack={handleBackToStart} />
       )}
     </>
   );
