@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Trophy, Target, Flame } from "lucide-react";
+import { ArrowLeft, Trophy, Target, Zap } from "lucide-react";
 import { toast } from "sonner";
 
 interface GameCanvasProps {
@@ -12,40 +12,43 @@ interface GameCanvasProps {
 }
 
 interface Snake {
-  x: number;
-  y: number;
+  segments: { x: number; y: number }[];
   vx: number;
   vy: number;
-  hue: number;
+  targetInsect: number | null;
 }
 
-interface Particle {
+interface Insect {
   x: number;
   y: number;
-  vx: number;
-  vy: number;
-  life: number;
-  color: string;
+  eaten: boolean;
+}
+
+interface Trap {
+  x: number;
+  y: number;
+  armed: boolean;
 }
 
 const DIFFICULTY_CONFIG = {
-  easy: { snakes: 3, speed: 1, time: 45, target: 5 },
-  medium: { snakes: 5, speed: 2, time: 35, target: 8 },
-  hard: { snakes: 7, speed: 3.5, time: 25, target: 12 },
+  easy: { insects: 5, traps: 8, speed: 1.5, time: 60 },
+  medium: { insects: 8, traps: 5, speed: 2.5, time: 45 },
+  hard: { insects: 12, traps: 3, speed: 3.5, time: 35 },
 };
 
 export const GameCanvas = ({ level, difficulty, onBack, onLevelComplete }: GameCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(DIFFICULTY_CONFIG[difficulty].time);
-  const [snakes, setSnakes] = useState<Snake[]>([]);
-  const [particles, setParticles] = useState<Particle[]>([]);
   const [gameActive, setGameActive] = useState(true);
-  const [combo, setCombo] = useState(0);
-  const lastCatchTime = useRef(0);
+  const [trapsLeft, setTrapsLeft] = useState(DIFFICULTY_CONFIG[difficulty].traps);
+  const [traps, setTraps] = useState<Trap[]>([]);
+  const [insects, setInsects] = useState<Insect[]>([]);
+  const [snake, setSnake] = useState<Snake | null>(null);
+  const [insectsEaten, setInsectsEaten] = useState(0);
+  const [caught, setCaught] = useState(false);
   
   const config = DIFFICULTY_CONFIG[difficulty];
-  const targetScore = config.target + (level - 1) * 2;
+  const totalInsects = config.insects + (level - 1) * 2;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -65,27 +68,34 @@ export const GameCanvas = ({ level, difficulty, onBack, onLevelComplete }: GameC
     updateCanvasSize();
     window.addEventListener("resize", updateCanvasSize);
 
-    // Initialize snakes
-    const initSnakes = () => {
-      const newSnakes: Snake[] = [];
-      const snakeCount = config.snakes + level - 1;
-      for (let i = 0; i < snakeCount; i++) {
-        newSnakes.push({
-          x: Math.random() * (canvas.width - 60) + 30,
-          y: Math.random() * (canvas.height - 60) + 30,
-          vx: (Math.random() - 0.5) * config.speed,
-          vy: (Math.random() - 0.5) * config.speed,
-          hue: Math.random() * 60 + 100, // Green to cyan
+    // Initialize game
+    if (!snake) {
+      const newInsects: Insect[] = [];
+      for (let i = 0; i < totalInsects; i++) {
+        newInsects.push({
+          x: Math.random() * (canvas.width - 40) + 20,
+          y: Math.random() * (canvas.height - 40) + 20,
+          eaten: false,
         });
       }
-      setSnakes(newSnakes);
-    };
-    initSnakes();
+      setInsects(newInsects);
+
+      setSnake({
+        segments: [
+          { x: canvas.width / 2, y: canvas.height / 2 },
+          { x: canvas.width / 2 - 10, y: canvas.height / 2 },
+          { x: canvas.width / 2 - 20, y: canvas.height / 2 },
+        ],
+        vx: config.speed,
+        vy: 0,
+        targetInsect: null,
+      });
+    }
 
     // Game loop
     let animationId: number;
     const gameLoop = () => {
-      if (!gameActive) return;
+      if (!gameActive || !snake || caught) return;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -96,87 +106,183 @@ export const GameCanvas = ({ level, difficulty, onBack, onLevelComplete }: GameC
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Update and draw particles
-      particles.forEach((particle, index) => {
-        particle.x += particle.vx;
-        particle.y += particle.vy;
-        particle.life -= 0.02;
-        particle.vy += 0.1; // Gravity
-
-        if (particle.life <= 0) {
-          particles.splice(index, 1);
-        } else {
-          ctx.globalAlpha = particle.life;
-          ctx.fillStyle = particle.color;
+      // Draw insects
+      insects.forEach((insect) => {
+        if (!insect.eaten) {
+          ctx.save();
+          ctx.translate(insect.x, insect.y);
+          
+          // Insect body
+          ctx.fillStyle = "#ef4444";
           ctx.beginPath();
-          ctx.arc(particle.x, particle.y, 3, 0, Math.PI * 2);
+          ctx.arc(0, 0, 4, 0, Math.PI * 2);
           ctx.fill();
+          
+          // Insect wings
+          ctx.fillStyle = "rgba(239, 68, 68, 0.3)";
+          ctx.beginPath();
+          ctx.ellipse(-3, 0, 4, 2, -Math.PI / 4, 0, Math.PI * 2);
+          ctx.ellipse(3, 0, 4, 2, Math.PI / 4, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.restore();
         }
       });
-      ctx.globalAlpha = 1;
 
-      // Update and draw snakes
-      snakes.forEach((snake) => {
-        // Update position
-        snake.x += snake.vx;
-        snake.y += snake.vy;
-
-        // Bounce off walls with speed variation
-        if (snake.x <= 20 || snake.x >= canvas.width - 20) {
-          snake.vx *= -1;
-          snake.x = Math.max(20, Math.min(canvas.width - 20, snake.x));
-        }
-        if (snake.y <= 20 || snake.y >= canvas.height - 20) {
-          snake.vy *= -1;
-          snake.y = Math.max(20, Math.min(canvas.height - 20, snake.y));
-        }
-
-        // Draw snake with gradient
+      // Draw traps
+      traps.forEach((trap) => {
         ctx.save();
-        ctx.translate(snake.x, snake.y);
+        ctx.translate(trap.x, trap.y);
         
-        const snakeGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 20);
-        snakeGradient.addColorStop(0, `hsl(${snake.hue}, 80%, 60%)`);
-        snakeGradient.addColorStop(1, `hsl(${snake.hue}, 80%, 40%)`);
-        
-        // Snake body with shadow
-        ctx.shadowColor = `hsl(${snake.hue}, 80%, 30%)`;
-        ctx.shadowBlur = 10;
-        ctx.fillStyle = snakeGradient;
+        // Trap circle
+        ctx.strokeStyle = trap.armed ? "#f59e0b" : "#10b981";
+        ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.arc(0, 0, 18, 0, Math.PI * 2);
+        ctx.arc(0, 0, 15, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Trap cross
+        ctx.beginPath();
+        ctx.moveTo(-10, 0);
+        ctx.lineTo(10, 0);
+        ctx.moveTo(0, -10);
+        ctx.lineTo(0, 10);
+        ctx.stroke();
+        
+        if (trap.armed) {
+          // Pulsing effect for armed trap
+          ctx.fillStyle = "rgba(245, 158, 11, 0.2)";
+          ctx.beginPath();
+          ctx.arc(0, 0, 18, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        ctx.restore();
+      });
+
+      // Find nearest uneaten insect
+      const head = snake.segments[0];
+      let nearestInsect = -1;
+      let nearestDist = Infinity;
+      
+      insects.forEach((insect, idx) => {
+        if (!insect.eaten) {
+          const dx = insect.x - head.x;
+          const dy = insect.y - head.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < nearestDist) {
+            nearestDist = dist;
+            nearestInsect = idx;
+          }
+        }
+      });
+
+      // Move snake toward nearest insect
+      if (nearestInsect >= 0) {
+        const target = insects[nearestInsect];
+        const dx = target.x - head.x;
+        const dy = target.y - head.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        if (dist > 0) {
+          snake.vx = (dx / dist) * config.speed;
+          snake.vy = (dy / dist) * config.speed;
+        }
+
+        // Check if snake ate insect
+        if (dist < 12) {
+          insects[nearestInsect].eaten = true;
+          setInsectsEaten((prev) => prev + 1);
+          toast.success("🐛 Snake ate an insect!", { duration: 800 });
+          
+          // Grow snake
+          const tail = snake.segments[snake.segments.length - 1];
+          snake.segments.push({ ...tail });
+        }
+      }
+
+      // Update snake position
+      const newHead = {
+        x: head.x + snake.vx,
+        y: head.y + snake.vy,
+      };
+
+      // Bounce off walls
+      if (newHead.x <= 15 || newHead.x >= canvas.width - 15) {
+        snake.vx *= -1;
+        newHead.x = Math.max(15, Math.min(canvas.width - 15, newHead.x));
+      }
+      if (newHead.y <= 15 || newHead.y >= canvas.height - 15) {
+        snake.vy *= -1;
+        newHead.y = Math.max(15, Math.min(canvas.height - 15, newHead.y));
+      }
+
+      // Check trap collision
+      traps.forEach((trap) => {
+        const dx = newHead.x - trap.x;
+        const dy = newHead.y - trap.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        if (dist < 20 && trap.armed) {
+          setCaught(true);
+          setGameActive(false);
+          toast.success("🎉 Snake Caught!", { duration: 2000 });
+          setTimeout(onLevelComplete, 1500);
+          trap.armed = false;
+        }
+      });
+
+      // Move snake segments
+      for (let i = snake.segments.length - 1; i > 0; i--) {
+        snake.segments[i] = { ...snake.segments[i - 1] };
+      }
+      snake.segments[0] = newHead;
+
+      // Draw snake
+      snake.segments.forEach((segment, idx) => {
+        ctx.save();
+        ctx.translate(segment.x, segment.y);
+        
+        const isHead = idx === 0;
+        const size = isHead ? 12 : 10 - idx * 0.5;
+        
+        // Snake segment gradient
+        const segmentGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size);
+        segmentGradient.addColorStop(0, "#22c55e");
+        segmentGradient.addColorStop(1, "#15803d");
+        
+        ctx.fillStyle = segmentGradient;
+        ctx.beginPath();
+        ctx.arc(0, 0, size, 0, Math.PI * 2);
         ctx.fill();
         
-        ctx.shadowBlur = 0;
-        
-        // Snake pattern (scales)
-        ctx.strokeStyle = `hsl(${snake.hue}, 60%, 30%)`;
-        ctx.lineWidth = 2;
-        for (let i = -10; i <= 10; i += 5) {
+        if (isHead) {
+          // Snake eyes
+          const angle = Math.atan2(snake.vy, snake.vx);
+          ctx.rotate(angle);
+          
+          ctx.fillStyle = "#ffffff";
           ctx.beginPath();
-          ctx.arc(i, 0, 3, 0, Math.PI * 2);
+          ctx.arc(3, -4, 3, 0, Math.PI * 2);
+          ctx.arc(3, 4, 3, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.fillStyle = "#000000";
+          ctx.beginPath();
+          ctx.arc(3, -4, 1.5, 0, Math.PI * 2);
+          ctx.arc(3, 4, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Tongue
+          ctx.strokeStyle = "#ef4444";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(8, 0);
+          ctx.lineTo(12, -2);
+          ctx.moveTo(8, 0);
+          ctx.lineTo(12, 2);
           ctx.stroke();
         }
-        
-        // Snake eyes
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.arc(-6, -6, 4, 0, Math.PI * 2);
-        ctx.arc(6, -6, 4, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.fillStyle = "#000000";
-        ctx.beginPath();
-        ctx.arc(-6, -6, 2, 0, Math.PI * 2);
-        ctx.arc(6, -6, 2, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Smile
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(0, 0, 8, 0.2, Math.PI - 0.2);
-        ctx.stroke();
         
         ctx.restore();
       });
@@ -185,75 +291,29 @@ export const GameCanvas = ({ level, difficulty, onBack, onLevelComplete }: GameC
     };
     gameLoop();
 
-    // Handle clicks/touches
-    const createParticles = (x: number, y: number, color: string) => {
-      const newParticles: Particle[] = [];
-      for (let i = 0; i < 12; i++) {
-        const angle = (Math.PI * 2 * i) / 12;
-        newParticles.push({
-          x,
-          y,
-          vx: Math.cos(angle) * 3,
-          vy: Math.sin(angle) * 3,
-          life: 1,
-          color,
-        });
-      }
-      setParticles((prev) => [...prev, ...newParticles]);
-    };
-
+    // Handle clicks/touches for trap placement
     const handleInteraction = (clientX: number, clientY: number) => {
+      if (trapsLeft <= 0 || !gameActive || caught) return;
+
       const rect = canvas.getBoundingClientRect();
       const x = clientX - rect.left;
       const y = clientY - rect.top;
 
-      let caught = false;
-
-      snakes.forEach((snake) => {
-        const dx = x - snake.x;
-        const dy = y - snake.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance < 18) {
-          caught = true;
-          
-          // Create particles
-          createParticles(snake.x, snake.y, `hsl(${snake.hue}, 80%, 60%)`);
-          
-          // Check combo
-          const now = Date.now();
-          if (now - lastCatchTime.current < 1500) {
-            setCombo((prev) => {
-              const newCombo = prev + 1;
-              if (newCombo >= 3) {
-                toast.success(`${newCombo}x Combo! 🔥`, { duration: 1000 });
-              }
-              return newCombo;
-            });
-          } else {
-            setCombo(1);
-          }
-          lastCatchTime.current = now;
-          
-          setScore((prev) => {
-            const newScore = prev + 1;
-            if (newScore >= targetScore) {
-              setGameActive(false);
-              toast.success("Level Complete! 🎉");
-              setTimeout(onLevelComplete, 1500);
-            } else {
-              toast.success("+1 Snake! 🐍", { duration: 800 });
-            }
-            return newScore;
-          });
-          
-          // Respawn snake
-          snake.x = Math.random() * (canvas.width - 60) + 30;
-          snake.y = Math.random() * (canvas.height - 60) + 30;
-          snake.vx = (Math.random() - 0.5) * config.speed;
-          snake.vy = (Math.random() - 0.5) * config.speed;
-        }
+      // Check if click is too close to existing traps
+      const tooClose = traps.some((trap) => {
+        const dx = trap.x - x;
+        const dy = trap.y - y;
+        return Math.sqrt(dx * dx + dy * dy) < 40;
       });
+
+      if (tooClose) {
+        toast.error("Too close to another trap!", { duration: 1000 });
+        return;
+      }
+
+      setTraps((prev) => [...prev, { x, y, armed: true }]);
+      setTrapsLeft((prev) => prev - 1);
+      toast.success("🪤 Trap placed!", { duration: 800 });
     };
 
     const handleClick = (e: MouseEvent) => {
@@ -277,17 +337,17 @@ export const GameCanvas = ({ level, difficulty, onBack, onLevelComplete }: GameC
       canvas.removeEventListener("touchstart", handleTouch);
       cancelAnimationFrame(animationId);
     };
-  }, [snakes, particles, gameActive, level, difficulty, onLevelComplete, targetScore, config, combo]);
+  }, [snake, insects, traps, gameActive, config, totalInsects, difficulty, level, onLevelComplete, trapsLeft, caught]);
 
   // Timer
   useEffect(() => {
-    if (!gameActive) return;
+    if (!gameActive || caught) return;
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           setGameActive(false);
-          toast.error("Time's up! ⏰");
+          toast.error("Time's up! Snake escaped! 🐍", { duration: 2000 });
           return 0;
         }
         return prev - 1;
@@ -295,18 +355,7 @@ export const GameCanvas = ({ level, difficulty, onBack, onLevelComplete }: GameC
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [gameActive]);
-
-  // Reset combo after inactivity
-  useEffect(() => {
-    const resetCombo = setInterval(() => {
-      if (Date.now() - lastCatchTime.current > 1500) {
-        setCombo(0);
-      }
-    }, 500);
-
-    return () => clearInterval(resetCombo);
-  }, []);
+  }, [gameActive, caught]);
 
   const difficultyColor = {
     easy: "text-secondary",
@@ -328,16 +377,16 @@ export const GameCanvas = ({ level, difficulty, onBack, onLevelComplete }: GameC
             </div>
             <div className="text-xl font-bold text-foreground">Level {level}</div>
           </div>
-          <div className="w-20" /> {/* Spacer */}
+          <div className="w-20" />
         </div>
 
         <div className="grid grid-cols-3 gap-3 mb-4">
-          <Card className="p-3 bg-primary/5 border-primary/20">
+          <Card className="p-3 bg-destructive/5 border-destructive/20">
             <div className="flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-primary" />
+              <Trophy className="w-4 h-4 text-destructive" />
               <div>
-                <div className="text-xs text-muted-foreground">Score</div>
-                <div className="text-lg font-bold text-foreground">{score}/{targetScore}</div>
+                <div className="text-xs text-muted-foreground">Eaten</div>
+                <div className="text-lg font-bold text-foreground">{insectsEaten}/{totalInsects}</div>
               </div>
             </div>
           </Card>
@@ -352,10 +401,10 @@ export const GameCanvas = ({ level, difficulty, onBack, onLevelComplete }: GameC
           </Card>
           <Card className="p-3 bg-accent/5 border-accent/20">
             <div className="flex items-center gap-2">
-              <Flame className="w-4 h-4 text-accent" />
+              <Zap className="w-4 h-4 text-accent" />
               <div>
-                <div className="text-xs text-muted-foreground">Combo</div>
-                <div className="text-lg font-bold text-foreground">{combo}x</div>
+                <div className="text-xs text-muted-foreground">Traps</div>
+                <div className="text-lg font-bold text-foreground">{trapsLeft}</div>
               </div>
             </div>
           </Card>
@@ -363,14 +412,14 @@ export const GameCanvas = ({ level, difficulty, onBack, onLevelComplete }: GameC
 
         <Card className="p-3 mb-4 bg-accent/5 border-accent/20">
           <p className="text-center text-sm text-foreground">
-            🎯 Tap the snakes to catch them! Catch {targetScore} before time runs out!
+            🪤 Click to place traps! Catch the snake before it eats all {totalInsects} insects!
           </p>
         </Card>
 
         <div className="flex justify-center">
           <canvas
             ref={canvasRef}
-            className="border-4 border-primary/30 rounded-2xl bg-background/50 cursor-pointer touch-none shadow-xl hover:border-primary/50 transition-colors"
+            className="border-4 border-primary/30 rounded-2xl bg-background/50 cursor-crosshair touch-none shadow-xl hover:border-primary/50 transition-colors"
             style={{ maxWidth: "100%" }}
           />
         </div>
@@ -378,12 +427,12 @@ export const GameCanvas = ({ level, difficulty, onBack, onLevelComplete }: GameC
         {!gameActive && (
           <Card className="mt-6 p-6 text-center bg-gradient-primary animate-slide-up">
             <h3 className="text-2xl font-bold text-background mb-2">
-              {score >= targetScore ? "🎉 Level Complete!" : "⏰ Time's Up!"}
+              {caught ? "🎉 Snake Caught!" : "⏰ Snake Escaped!"}
             </h3>
             <p className="text-background/90">
-              {score >= targetScore
-                ? `Amazing! You caught ${score} snakes!`
-                : `You caught ${score}/${targetScore} snakes. Try again!`}
+              {caught
+                ? `Great strategy! The snake ate ${insectsEaten} insects before you caught it!`
+                : `The snake ate ${insectsEaten} insects and escaped. Try faster trap placement!`}
             </p>
           </Card>
         )}

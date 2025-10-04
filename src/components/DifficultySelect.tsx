@@ -31,12 +31,12 @@ export const DifficultySelect = ({ onSelect, onBack }: DifficultySelectProps) =>
               </div>
               <h3 className="text-2xl font-bold text-foreground mb-3">Easy</h3>
               <p className="text-muted-foreground mb-6">
-                Perfect for beginners. Slow snakes, more time.
+                Perfect for beginners. Slow snake, more traps and time.
               </p>
               <div className="space-y-2 text-sm text-foreground/80">
-                <div>🐍 3-4 slow snakes</div>
-                <div>⏱️ 45 seconds per level</div>
-                <div>🎯 Catch 5 snakes</div>
+                <div>🐛 5 insects to protect</div>
+                <div>⏱️ 60 seconds</div>
+                <div>🪤 8 traps available</div>
               </div>
             </div>
           </Card>
@@ -52,12 +52,12 @@ export const DifficultySelect = ({ onSelect, onBack }: DifficultySelectProps) =>
               </div>
               <h3 className="text-2xl font-bold text-foreground mb-3">Medium</h3>
               <p className="text-muted-foreground mb-6">
-                Balanced challenge. Good for learners.
+                Balanced challenge. Moderate speed and traps.
               </p>
               <div className="space-y-2 text-sm text-foreground/80">
-                <div>🐍 5-6 medium snakes</div>
-                <div>⏱️ 35 seconds per level</div>
-                <div>🎯 Catch 8 snakes</div>
+                <div>🐛 8 insects to protect</div>
+                <div>⏱️ 45 seconds</div>
+                <div>🪤 5 traps available</div>
               </div>
             </div>
           </Card>
@@ -73,12 +73,12 @@ export const DifficultySelect = ({ onSelect, onBack }: DifficultySelectProps) =>
               </div>
               <h3 className="text-2xl font-bold text-foreground mb-3">Hard</h3>
               <p className="text-muted-foreground mb-6">
-                Expert level. Fast snakes, less time!
+                Expert level. Fast snake, limited traps!
               </p>
               <div className="space-y-2 text-sm text-foreground/80">
-                <div>🐍 7-8 fast snakes</div>
-                <div>⏱️ 25 seconds per level</div>
-                <div>🎯 Catch 12 snakes</div>
+                <div>🐛 12 insects to protect</div>
+                <div>⏱️ 35 seconds</div>
+                <div>🪤 Only 3 traps!</div>
               </div>
             </div>
           </Card>
