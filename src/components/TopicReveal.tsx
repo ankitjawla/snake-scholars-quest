@@ -17,13 +17,17 @@ export const TopicReveal = ({ topicId, score, onContinue }: TopicRevealProps) =>
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [answered, setAnswered] = useState(false);
   
-  const subjectColors = {
-    math: { bg: "from-primary/10 to-accent/10", border: "border-primary/20", icon: "text-primary" },
-    science: { bg: "from-secondary/10 to-accent/10", border: "border-secondary/20", icon: "text-secondary" },
-    programming: { bg: "from-accent/10 to-primary/10", border: "border-accent/20", icon: "text-accent" },
+  const subjectColors: Record<string, { bg: string; border: string; icon: string; label: string }> = {
+    math: { bg: "from-blue-500/10 to-blue-600/10", border: "border-blue-500/20", icon: "text-blue-500", label: "Mathematics" },
+    science: { bg: "from-green-500/10 to-green-600/10", border: "border-green-500/20", icon: "text-green-500", label: "Science" },
+    evs: { bg: "from-teal-500/10 to-teal-600/10", border: "border-teal-500/20", icon: "text-teal-500", label: "EVS" },
+    english: { bg: "from-orange-500/10 to-orange-600/10", border: "border-orange-500/20", icon: "text-orange-500", label: "English" },
+    hindi: { bg: "from-red-500/10 to-red-600/10", border: "border-red-500/20", icon: "text-red-500", label: "हिंदी" },
+    "social-science": { bg: "from-purple-500/10 to-purple-600/10", border: "border-purple-500/20", icon: "text-purple-500", label: "Social Science" },
+    programming: { bg: "from-indigo-500/10 to-indigo-600/10", border: "border-indigo-500/20", icon: "text-indigo-500", label: "Programming" },
   };
 
-  const colors = subjectColors[topic.subject];
+  const colors = subjectColors[topic.subject] || subjectColors.math;
 
   const handleAnswerSelect = (index: number) => {
     if (answered) return;
@@ -59,8 +63,15 @@ export const TopicReveal = ({ topicId, score, onContinue }: TopicRevealProps) =>
 
           <Card className={`p-6 md:p-8 mb-6 bg-gradient-to-br ${colors.bg} ${colors.border} animate-slide-up`} style={{ animationDelay: "0.1s" }}>
             <div className="mb-6">
-              <div className={`inline-block px-3 py-1 rounded-full bg-background/50 ${colors.icon} text-sm font-semibold uppercase mb-4`}>
-                {topic.subject}
+              <div className="flex items-center gap-2 mb-4">
+                <div className={`inline-block px-3 py-1 rounded-full bg-background/50 ${colors.icon} text-sm font-semibold`}>
+                  {colors.label}
+                </div>
+                {topic.subCategory && (
+                  <div className="text-xs px-2 py-1 rounded-full bg-background/30 text-foreground">
+                    {topic.subCategory}
+                  </div>
+                )}
               </div>
               <h3 className="text-xl font-bold text-foreground mb-6">{topic.question}</h3>
             </div>
@@ -144,13 +155,19 @@ export const TopicReveal = ({ topicId, score, onContinue }: TopicRevealProps) =>
         </div>
 
         <Card className={`p-6 md:p-8 mb-6 bg-gradient-to-br ${colors.bg} ${colors.border} animate-slide-up`} style={{ animationDelay: "0.1s" }}>
-          <div className="flex items-center gap-3 mb-4">
-            <div className={`inline-block px-3 py-1 rounded-full bg-background/50 ${colors.icon} text-sm font-semibold uppercase`}>
-              {topic.subject}
+          <div className="flex items-center gap-2 mb-4">
+            <div className={`inline-block px-3 py-1 rounded-full bg-background/50 ${colors.icon} text-sm font-semibold`}>
+              {colors.label}
             </div>
+            {topic.subCategory && (
+              <div className="text-xs px-2 py-1 rounded-full bg-background/30 text-foreground">
+                {topic.subCategory}
+              </div>
+            )}
           </div>
           
-          <h3 className="text-2xl font-bold text-foreground mb-4">{topic.title}</h3>
+          <h3 className="text-2xl font-bold text-foreground mb-2">{topic.title}</h3>
+          <p className="text-sm text-muted-foreground italic mb-4">📚 {topic.learningOutcome}</p>
           
           <div className="space-y-4">
             <div className="p-4 rounded-xl bg-background/50">
