@@ -21,10 +21,10 @@ export const educationalTopics: EducationalTopic[] = [
     example: "5 insects + 3 insects = 8 insects total!",
     funFact: "Ancient Egyptians used addition to count their treasures over 4,000 years ago!",
     emoji: "➕",
-    question: "If you collected 7 insects and then collected 5 more, how many insects do you have in total?",
-    options: ["10 insects", "12 insects", "15 insects", "8 insects"],
-    correctAnswer: 1,
-    explanation: "7 + 5 = 12 insects! Great job!"
+    question: "A snake collected 48 insects in the morning and 37 insects in the evening. If it ate 29 insects, how many are left?",
+    options: ["56 insects", "66 insects", "85 insects", "114 insects"],
+    correctAnswer: 0,
+    explanation: "First add: 48 + 37 = 85 total collected. Then subtract: 85 - 29 = 56 insects remaining!"
   },
   {
     id: 2,
@@ -34,10 +34,10 @@ export const educationalTopics: EducationalTopic[] = [
     example: "Plants use sun + water + CO₂ = food + oxygen for us!",
     funFact: "A single tree produces enough oxygen for 2 people in one year!",
     emoji: "🌱",
-    question: "What do plants need to make their own food?",
-    options: ["Only water", "Sunlight, water, and air", "Only soil", "Only sunlight"],
+    question: "During photosynthesis, what gas do plants RELEASE into the atmosphere?",
+    options: ["Carbon dioxide", "Oxygen", "Nitrogen", "Hydrogen"],
     correctAnswer: 1,
-    explanation: "Plants need sunlight, water, and carbon dioxide from air to make food through photosynthesis!"
+    explanation: "Plants take in CO₂ and release Oxygen (O₂) as a byproduct. This oxygen is what we breathe!"
   },
   {
     id: 3,
@@ -47,10 +47,10 @@ export const educationalTopics: EducationalTopic[] = [
     example: "3 × 4 = 3 + 3 + 3 + 3 = 12",
     funFact: "The multiplication symbol (×) was invented in 1631!",
     emoji: "✖️",
-    question: "What is 6 × 3?",
-    options: ["15", "18", "21", "9"],
-    correctAnswer: 1,
-    explanation: "6 × 3 = 18. That's the same as 6 + 6 + 6!"
+    question: "If 12 insects are arranged in equal rows of 4, and the snake eats 2 complete rows, how many insects remain?",
+    options: ["4 insects", "6 insects", "8 insects", "10 insects"],
+    correctAnswer: 0,
+    explanation: "Total rows = 12 ÷ 4 = 3 rows. Snake ate 2 rows (2 × 4 = 8). Remaining = 12 - 8 = 4 insects!"
   },
   {
     id: 4,
@@ -60,10 +60,10 @@ export const educationalTopics: EducationalTopic[] = [
     example: "Why insects fall down when the snake jumps!",
     funFact: "On the Moon, you'd weigh only 1/6th of your Earth weight!",
     emoji: "🌍",
-    question: "What makes things fall down to the ground?",
-    options: ["Wind", "Gravity", "Magnetism", "Air pressure"],
+    question: "Why do astronauts float in space but not on Earth?",
+    options: ["Space has no air", "Space has very weak gravity", "Spaceships have special technology", "Astronauts wear special suits"],
     correctAnswer: 1,
-    explanation: "Gravity is the force that pulls everything toward Earth's center!"
+    explanation: "In space, gravity is much weaker. On Earth, gravity pulls us down strongly (9.8 m/s²)!"
   },
   {
     id: 5,
@@ -73,10 +73,10 @@ export const educationalTopics: EducationalTopic[] = [
     example: "for (i = 0; i < 10; i++) { collect_insect(); }",
     funFact: "Loops help game characters move smoothly 60 times every second!",
     emoji: "🔄",
-    question: "What do loops do in programming?",
-    options: ["Delete code", "Repeat actions multiple times", "Stop the program", "Change colors"],
+    question: "What will this code output: for(i=1; i<=5; i++) { print(i*2); }",
+    options: ["1, 2, 3, 4, 5", "2, 4, 6, 8, 10", "2, 4, 8, 16, 32", "1, 4, 9, 16, 25"],
     correctAnswer: 1,
-    explanation: "Loops repeat the same action many times - like collecting insects over and over!"
+    explanation: "The loop runs 5 times (i = 1 to 5) and prints i×2 each time: 2, 4, 6, 8, 10!"
   },
   {
     id: 6,
@@ -86,10 +86,10 @@ export const educationalTopics: EducationalTopic[] = [
     example: "You collected 1/2 of the insects (5 out of 10)!",
     funFact: "Pizza slices are the tastiest way to learn fractions!",
     emoji: "🍕",
-    question: "If you eat 2 slices of a pizza that has 8 slices total, what fraction did you eat?",
-    options: ["1/2", "2/8 or 1/4", "1/8", "2/4"],
-    correctAnswer: 1,
-    explanation: "2 out of 8 slices = 2/8, which simplifies to 1/4. Nice work!"
+    question: "Which is greater: 3/4 or 5/8?",
+    options: ["3/4", "5/8", "Both are equal", "Cannot compare"],
+    correctAnswer: 0,
+    explanation: "Convert to same denominator: 3/4 = 6/8. Since 6/8 > 5/8, therefore 3/4 is greater!"
   },
   {
     id: 7,
@@ -99,10 +99,10 @@ export const educationalTopics: EducationalTopic[] = [
     example: "Snake speed = distance ÷ time",
     funFact: "Cheetahs can run at 70 mph - that's as fast as a car!",
     emoji: "⚡",
-    question: "If a snake travels 20 meters in 5 seconds, what's its speed?",
-    options: ["5 m/s", "4 m/s", "10 m/s", "15 m/s"],
+    question: "A snake runs at 8 m/s for 15 seconds, then 12 m/s for 10 seconds. What's the total distance covered?",
+    options: ["200 meters", "240 meters", "120 meters", "180 meters"],
     correctAnswer: 1,
-    explanation: "Speed = Distance ÷ Time. So 20 ÷ 5 = 4 meters per second!"
+    explanation: "Distance = Speed × Time. First part: 8×15 = 120m. Second part: 12×10 = 120m. Total = 240m!"
   },
   {
     id: 8,
@@ -112,10 +112,10 @@ export const educationalTopics: EducationalTopic[] = [
     example: "IF hit obstacle THEN lose life",
     funFact: "Every app on your phone uses millions of if-then decisions!",
     emoji: "🔀",
-    question: "If you write: IF score > 100 THEN say 'Great!', when does it say 'Great!'?",
-    options: ["Always", "When score is more than 100", "When score is 100", "Never"],
-    correctAnswer: 1,
-    explanation: "The code only says 'Great!' when the score is MORE than 100. That's how IF statements work!"
+    question: "What is the output: IF(x=10) { print 'A' } ELSE IF(x>5) { print 'B' } ELSE { print 'C' } when x=10?",
+    options: ["A", "B", "C", "AB"],
+    correctAnswer: 0,
+    explanation: "When x=10, the first condition (x=10) is true, so it prints 'A' and skips the rest!"
   },
   {
     id: 9,
@@ -125,10 +125,10 @@ export const educationalTopics: EducationalTopic[] = [
     example: "Circles have no corners, squares have 4 equal sides",
     funFact: "Bees make hexagon-shaped honeycombs because it's the strongest shape!",
     emoji: "🔷",
-    question: "How many corners does a triangle have?",
-    options: ["2", "3", "4", "5"],
-    correctAnswer: 1,
-    explanation: "A triangle has 3 corners (vertices) and 3 sides. That's why it's called a 'tri-angle'!"
+    question: "What is the area of a rectangle with length 12 cm and breadth 8 cm?",
+    options: ["20 cm²", "40 cm²", "96 cm²", "48 cm²"],
+    correctAnswer: 2,
+    explanation: "Area of rectangle = Length × Breadth = 12 × 8 = 96 cm²"
   },
   {
     id: 10,
@@ -138,10 +138,10 @@ export const educationalTopics: EducationalTopic[] = [
     example: "Insects eat plants → Snake eats insects → Energy flows!",
     funFact: "You're part of a food chain too - everything is connected!",
     emoji: "🦎",
-    question: "In a food chain, where does energy start from?",
-    options: ["Animals", "The Sun", "Water", "Rocks"],
-    correctAnswer: 1,
-    explanation: "Energy starts from the Sun! Plants use sunlight to make food, then animals eat plants."
+    question: "In this food chain: Grass → Grasshopper → Frog → Snake → Eagle, what is the snake's role?",
+    options: ["Producer", "Primary consumer", "Secondary consumer", "Tertiary consumer"],
+    correctAnswer: 3,
+    explanation: "Snake is a tertiary (3rd level) consumer. It eats frogs (secondary consumers) that eat grasshoppers (primary consumers) that eat grass (producer)!"
   },
   {
     id: 11,
@@ -151,10 +151,10 @@ export const educationalTopics: EducationalTopic[] = [
     example: "let score = 0; score = score + 10;",
     funFact: "Your game score is stored in a variable that updates constantly!",
     emoji: "📦",
-    question: "What is a variable in programming?",
-    options: ["A type of loop", "A container that stores information", "A game character", "An error message"],
+    question: "If x=5 and y=10, what is the value of z after: z = x + y * 2?",
+    options: ["30", "25", "20", "15"],
     correctAnswer: 1,
-    explanation: "Variables are like boxes that store information - like your score, name, or any data!"
+    explanation: "Following order of operations (BODMAS): y * 2 = 20, then x + 20 = 25. Multiplication happens before addition!"
   },
   {
     id: 12,
@@ -164,9 +164,9 @@ export const educationalTopics: EducationalTopic[] = [
     example: "2, 4, 6, 8... (add 2 each time)",
     funFact: "Nature loves patterns - look at flower petals or pinecones!",
     emoji: "🔢",
-    question: "What comes next in this pattern: 5, 10, 15, 20, __?",
-    options: ["22", "25", "30", "21"],
+    question: "Find the missing number: 3, 9, 27, 81, __?",
+    options: ["162", "243", "108", "135"],
     correctAnswer: 1,
-    explanation: "The pattern adds 5 each time, so 20 + 5 = 25. You found the pattern!"
+    explanation: "Each number is multiplied by 3. This is a geometric sequence: 81 × 3 = 243!"
   },
 ];
