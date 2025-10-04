@@ -1,13 +1,14 @@
 import { Button } from "@/components/ui/button";
-import { Sparkles, BookOpen, Trophy } from "lucide-react";
+import { Sparkles, BookOpen, Trophy, Users } from "lucide-react";
 
 interface StartScreenProps {
   onStart: () => void;
   onViewTopics: () => void;
+  onViewFounders: () => void;
   highScore: number;
 }
 
-export const StartScreen = ({ onStart, onViewTopics, highScore }: StartScreenProps) => {
+export const StartScreen = ({ onStart, onViewTopics, onViewFounders, highScore }: StartScreenProps) => {
   return (
     <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4 overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -78,6 +79,17 @@ export const StartScreen = ({ onStart, onViewTopics, highScore }: StartScreenPro
 
         <div className="mt-8 text-background/70 text-sm animate-slide-up" style={{ animationDelay: "0.7s" }}>
           👆 Swipe Left/Right • 👆 Swipe Up to Jump
+        </div>
+
+        <div className="mt-6 animate-slide-up" style={{ animationDelay: "0.8s" }}>
+          <Button 
+            variant="ghost"
+            onClick={onViewFounders}
+            className="text-background/90 hover:text-background hover:bg-background/10"
+          >
+            <Users className="mr-2 h-4 w-4" />
+            Meet the Founders
+          </Button>
         </div>
       </div>
     </div>

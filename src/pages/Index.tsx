@@ -3,8 +3,9 @@ import { StartScreen } from "@/components/StartScreen";
 import { EndlessRunner } from "@/components/EndlessRunner";
 import { TopicReveal } from "@/components/TopicReveal";
 import { TopicsLibrary } from "@/components/TopicsLibrary";
+import { FoundersStory } from "@/components/FoundersStory";
 
-type Screen = "start" | "game" | "reveal" | "library";
+type Screen = "start" | "game" | "reveal" | "library" | "founders";
 
 const Index = () => {
   const [screen, setScreen] = useState<Screen>("start");
@@ -18,6 +19,10 @@ const Index = () => {
 
   const handleViewTopics = () => {
     setScreen("library");
+  };
+
+  const handleViewFounders = () => {
+    setScreen("founders");
   };
 
   const handleBackToStart = () => {
@@ -43,6 +48,7 @@ const Index = () => {
         <StartScreen
           onStart={handleStart}
           onViewTopics={handleViewTopics}
+          onViewFounders={handleViewFounders}
           highScore={highScore}
         />
       )}
@@ -57,6 +63,7 @@ const Index = () => {
         />
       )}
       {screen === "library" && <TopicsLibrary onBack={handleBackToStart} />}
+      {screen === "founders" && <FoundersStory onBack={handleBackToStart} />}
     </>
   );
 };
