@@ -8,6 +8,7 @@ import { educationalTopics } from "@/data/educationalContent";
 interface EndlessRunnerProps {
   onGameOver: (score: number, topicId: number) => void;
   onHome: () => void;
+  topicId?: number;
 }
 
 interface GameObject {
@@ -20,7 +21,7 @@ const LANES = 3;
 const LANE_WIDTH = 120;
 const GAME_SPEED = 4;
 
-export const EndlessRunner = ({ onGameOver, onHome }: EndlessRunnerProps) => {
+export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [score, setScore] = useState(0);
   const [paused, setPaused] = useState(false);
