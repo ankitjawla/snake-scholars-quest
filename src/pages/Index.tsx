@@ -1,18 +1,26 @@
 import { useState } from "react";
 import { Hero } from "@/components/Hero";
 import { FoundersStory } from "@/components/FoundersStory";
+import { DifficultySelect } from "@/components/DifficultySelect";
 import { GameCanvas } from "@/components/GameCanvas";
 import { LevelTransition } from "@/components/LevelTransition";
 
-type Screen = "hero" | "story" | "game" | "transition";
+type Screen = "hero" | "story" | "difficulty" | "game" | "transition";
+type Difficulty = "easy" | "medium" | "hard";
 
 const Index = () => {
   const [screen, setScreen] = useState<Screen>("hero");
   const [level, setLevel] = useState(1);
+  const [difficulty, setDifficulty] = useState<Difficulty>("medium");
 
   const handleStartGame = () => {
-    setScreen("game");
+    setScreen("difficulty");
+  };
+
+  const handleDifficultySelect = (selectedDifficulty: Difficulty) => {
+    setDifficulty(selectedDifficulty);
     setLevel(1);
+    setScreen("game");
   };
 
   const handleLearnMore = () => {
@@ -38,9 +46,13 @@ const Index = () => {
         <Hero onStartGame={handleStartGame} onLearnMore={handleLearnMore} />
       )}
       {screen === "story" && <FoundersStory onBack={handleBackToHero} />}
+      {screen === "difficulty" && (
+        <DifficultySelect onSelect={handleDifficultySelect} onBack={handleBackToHero} />
+      )}
       {screen === "game" && (
         <GameCanvas
           level={level}
+          difficulty={difficulty}
           onBack={handleBackToHero}
           onLevelComplete={handleLevelComplete}
         />
