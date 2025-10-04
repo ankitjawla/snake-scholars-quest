@@ -7,10 +7,11 @@ import { FoundersStory } from "@/components/FoundersStory";
 import { LearningModeSelector } from "@/components/LearningModeSelector";
 import { TopicSelector } from "@/components/TopicSelector";
 import { InteractiveLesson } from "@/components/InteractiveLesson";
+import { ProgressDashboard } from "@/components/ProgressDashboard";
 import { LearningMode } from "@/types/userProgress";
 import { hasCompletedLesson } from "@/utils/progressStorage";
 
-type Screen = "start" | "mode-select" | "topic-select" | "lesson" | "game" | "reveal" | "library" | "founders";
+type Screen = "start" | "mode-select" | "topic-select" | "lesson" | "game" | "reveal" | "library" | "founders" | "progress";
 
 const Index = () => {
   const [screen, setScreen] = useState<Screen>("start");
@@ -60,6 +61,15 @@ const Index = () => {
     setScreen("founders");
   };
 
+  const handleViewProgress = () => {
+    setScreen("progress");
+  };
+
+  const handleReviewTopic = (topicId: number) => {
+    setSelectedTopicId(topicId);
+    setScreen("lesson");
+  };
+
   const handleBackToStart = () => {
     setScreen("start");
     setSelectedTopicId(null);
@@ -93,6 +103,7 @@ const Index = () => {
           onStart={handleStart}
           onViewTopics={handleViewTopics}
           onViewFounders={handleViewFounders}
+          onViewProgress={handleViewProgress}
           highScore={highScore}
         />
       )}
@@ -133,6 +144,12 @@ const Index = () => {
       )}
       {screen === "library" && <TopicsLibrary onBack={handleBackToStart} />}
       {screen === "founders" && <FoundersStory onBack={handleBackToStart} />}
+      {screen === "progress" && (
+        <ProgressDashboard 
+          onBack={handleBackToStart}
+          onReviewTopic={handleReviewTopic}
+        />
+      )}
     </>
   );
 };

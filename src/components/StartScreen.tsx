@@ -1,14 +1,19 @@
 import { Button } from "@/components/ui/button";
-import { Sparkles, BookOpen, Trophy, Users } from "lucide-react";
+import { Sparkles, BookOpen, Trophy, Users, TrendingUp } from "lucide-react";
+import { StudyStreak } from "./StudyStreak";
+import { calculateStudyStreak } from "@/utils/adaptiveLearning";
 
 interface StartScreenProps {
   onStart: () => void;
   onViewTopics: () => void;
   onViewFounders: () => void;
+  onViewProgress: () => void;
   highScore: number;
 }
 
-export const StartScreen = ({ onStart, onViewTopics, onViewFounders, highScore }: StartScreenProps) => {
+export const StartScreen = ({ onStart, onViewTopics, onViewFounders, onViewProgress, highScore }: StartScreenProps) => {
+  const streak = calculateStudyStreak();
+  
   return (
     <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4 overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -42,6 +47,15 @@ export const StartScreen = ({ onStart, onViewTopics, onViewFounders, highScore }
           </div>
         )}
 
+        {streak > 0 && (
+          <div className="mb-6 animate-slide-up" style={{ animationDelay: "0.45s" }}>
+            <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-orange-500/20 backdrop-blur-sm border border-orange-500/30">
+              <span className="text-2xl">🔥</span>
+              <span className="text-background font-bold">{streak} Day Streak!</span>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up mb-8" style={{ animationDelay: "0.5s" }}>
           <Button 
             size="lg" 
@@ -59,6 +73,14 @@ export const StartScreen = ({ onStart, onViewTopics, onViewFounders, highScore }
           >
             <BookOpen className="mr-2 h-5 w-5" />
             View Topics
+          </Button>
+          <Button 
+            size="lg" 
+            variant="heroOutline"
+            onClick={onViewProgress}
+          >
+            <TrendingUp className="mr-2 h-5 w-5" />
+            My Progress
           </Button>
         </div>
 

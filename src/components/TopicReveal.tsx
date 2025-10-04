@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Lightbulb, BookOpen, ArrowRight, CheckCircle, XCircle } from "lucide-react";
-import { educationalTopics, type EducationalTopic } from "@/data/educationalContent";
+import { Card } from "@/components/ui/card";
+import { educationalTopics } from "@/data/educationalContent";
+import { CheckCircle, XCircle, Sparkles, Lightbulb, BookOpen, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import { scheduleReview, analyzeCommonMistakes } from "@/utils/adaptiveLearning";
+import { updateMasteryLevel, getStoredProgress, saveProgress } from "@/utils/progressStorage";
+import { VisualLearningTool } from "./VisualLearningTool";
 
 interface TopicRevealProps {
   topicId: number;
@@ -12,7 +15,7 @@ interface TopicRevealProps {
 }
 
 export const TopicReveal = ({ topicId, score, onContinue }: TopicRevealProps) => {
-  const topic: EducationalTopic = educationalTopics.find((t) => t.id === topicId) || educationalTopics[0];
+  const topic = educationalTopics.find((t) => t.id === topicId) || educationalTopics[0];
   const [showQuestion, setShowQuestion] = useState(true);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [answered, setAnswered] = useState(false);
@@ -34,9 +37,37 @@ export const TopicReveal = ({ topicId, score, onContinue }: TopicRevealProps) =>
     
     setSelectedAnswer(index);
     setAnswered(true);
+    const isCorrect = index === topic.correctAnswer;
     
-    if (index === topic.correctAnswer) {
+    // Track quiz attempt
+    const progress = getStoredProgress();
+    const quizScore = isCorrect ? 100 : 0;
+    progress.quizAttempts.push({
+      topicId,
+      score: quizScore,
+      timeToAnswer: 0,
+      mistakes: isCorrect ? [] : [topic.options[index]],
+    });
+    saveProgress(progress);
+
+    // Schedule review and update mastery
+    scheduleReview(topicId, quizScore);
+    
+    if (isCorrect) {
       toast.success("🎉 Correct! Great job!", { duration: 2000 });
+      // Update mastery level based on performance
+      const topicAttempts = progress.quizAttempts.filter(q => q.topicId === topicId);
+      const avgScore = topicAttempts.reduce((sum, q) => sum + q.score, 0) / topicAttempts.length;
+      
+      if (avgScore >= 90 && topicAttempts.length >= 3) {
+        updateMasteryLevel(topicId, "mastered");
+      } else if (avgScore >= 70) {
+        updateMasteryLevel(topicId, "advanced");
+      } else if (avgScore >= 50) {
+        updateMasteryLevel(topicId, "intermediate");
+      } else {
+        updateMasteryLevel(topicId, "beginner");
+      }
     } else {
       toast.error("Not quite right, but keep learning!", { duration: 2000 });
     }
@@ -195,6 +226,13 @@ export const TopicReveal = ({ topicId, score, onContinue }: TopicRevealProps) =>
             </div>
           </div>
         </Card>
+
+        {/* Show visual learning tool for math topics */}
+        {topic.subject === "math" && (
+          <div className="mb-6 animate-slide-up" style={{ animationDelay: "0.15s" }}>
+            <VisualLearningTool type="fraction-bar" topic={topic.title} />
+          </div>
+        )}
 
         <div className="text-center animate-slide-up" style={{ animationDelay: "0.2s" }}>
           <Button 

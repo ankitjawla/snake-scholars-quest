@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft, CheckCircle2, Circle, Play } from "lucide-react";
 import { educationalTopics } from "@/data/educationalContent";
 import { SubjectFilter } from "./SubjectFilter";
+import { LearningRecommendations } from "./LearningRecommendations";
 import { hasCompletedLesson, getMasteryLevel } from "@/utils/progressStorage";
 import { Badge } from "@/components/ui/badge";
 
@@ -69,6 +70,10 @@ export const TopicSelector = ({ onSelectTopic, onBack, mode }: TopicSelectorProp
           selectedSubject={selectedSubject}
           onSubjectChange={setSelectedSubject}
         />
+
+        <div className="mb-6">
+          <LearningRecommendations onSelectTopic={onSelectTopic} />
+        </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredTopics.map((topic, index) => {

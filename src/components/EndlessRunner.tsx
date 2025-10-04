@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Pause, Play, Home } from "lucide-react";
 import { toast } from "sonner";
 import { educationalTopics } from "@/data/educationalContent";
+import { HintCard } from "./HintCard";
 
 interface EndlessRunnerProps {
   onGameOver: (score: number, topicId: number) => void;
@@ -26,6 +27,8 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
   const [score, setScore] = useState(0);
   const [paused, setPaused] = useState(false);
   const [gameActive, setGameActive] = useState(true);
+  const [currentHint, setCurrentHint] = useState<string>("");
+  const [showHint, setShowHint] = useState(false);
   
   const snakeLane = useRef(1); // 0, 1, or 2
   const snakeY = useRef(0);
@@ -36,9 +39,22 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
   const obstacles = useRef<GameObject[]>([]);
   const roadOffset = useRef(0);
   const distance = useRef(0);
+  const lastHintScore = useRef(0);
   
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
+
+  // Generate hints based on selected topic
+  const selectedTopic = topicId ? educationalTopics.find(t => t.id === topicId) : null;
+  const hints = selectedTopic ? [
+    `💡 ${selectedTopic.concept.slice(0, 80)}...`,
+    `📚 Fun Fact: ${selectedTopic.funFact.slice(0, 80)}...`,
+    `✨ Example: ${selectedTopic.example.slice(0, 80)}...`,
+  ] : [
+    "💡 Stay in your lane to avoid obstacles!",
+    "📚 Collect insects for bonus points!",
+    "✨ Jump to avoid rocks on the road!",
+  ];
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -215,6 +231,14 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
             if (newScore % 100 === 0) {
               toast.success(`🎉 ${newScore} points!`, { duration: 1000 });
             }
+            // Show hint every 50 points
+            if (newScore - lastHintScore.current >= 50 && hints.length > 0) {
+              const randomHint = hints[Math.floor(Math.random() * hints.length)];
+              setCurrentHint(randomHint);
+              setShowHint(true);
+              lastHintScore.current = newScore;
+              setTimeout(() => setShowHint(false), 4000);
+            }
             return newScore;
           });
           return false;
@@ -338,7 +362,7 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
       canvas.removeEventListener("touchend", handleTouchEnd);
       cancelAnimationFrame(animationId);
     };
-  }, [gameActive, paused, onGameOver, score]);
+  }, [gameActive, paused, onGameOver, score, hints]);
 
   return (
     <div className="min-h-screen bg-background py-4 px-4">
@@ -369,7 +393,8 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
           </p>
         </Card>
 
-        <div className="flex justify-center">
+        <div className="flex justify-center relative">
+          <HintCard hint={currentHint} visible={showHint} />
           <canvas
             ref={canvasRef}
             className="border-4 border-primary/30 rounded-2xl bg-slate-900 touch-none shadow-xl"
