@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useCallback, useMemo, useState } from "react";
 import { StartScreen } from "@/components/StartScreen";
 import { EndlessRunner } from "@/components/EndlessRunner";
 import { TopicReveal } from "@/components/TopicReveal";
@@ -31,7 +30,6 @@ import {
   updateStickerAlbum,
   updateStreak,
 } from "@/utils/progressStorage";
-import { hasCompletedLesson } from "@/utils/progressStorage";
 import {
   educationalTopics,
   type AssessmentQuestion,
@@ -47,23 +45,6 @@ import {
 import { getChallengeForTopic, type MicroChallenge } from "@/data/microChallenges";
 
 type PowerUpId = "length-boost" | "angle-shield" | "fraction-freeze";
-
-type Screen =
-  | "start"
-  | "mode-select"
-  | "quest-map"
-  | "topic-select"
-  | "assessment"
-  | "micro-challenge"
-  | "lesson"
-  | "game"
-  | "reveal"
-  | "library"
-  | "founders"
-  | "progress"
-  | "leaderboard"
-  | "creative"
-  | "parent";
 
 type Screen =
   | "start"
@@ -103,9 +84,6 @@ export default function Index() {
   useEffect(() => {
     refreshProgress();
   }, []);
-  const [assessmentQuestions, setAssessmentQuestions] = useState<
-    AssessmentQuestion[] | null
-  >(null);
 
   const selectedTopic = useMemo(() => {
     if (selectedTopicId == null) return null;
@@ -150,16 +128,6 @@ export default function Index() {
     } else {
       setAssessmentQuestions(null);
     }
-    }
-
-    const lessonCompleted = hasCompletedLesson(topicId);
-    if (lessonCompleted && selectedMode === "practice") {
-      setScreen("assessment");
-      return;
-    }
-
-    setScreen("lesson");
-  };
 
     const lessonCompleted = hasCompletedLesson(topicId);
     if (lessonCompleted && selectedMode === "practice") {
@@ -183,64 +151,6 @@ export default function Index() {
     } else {
       setScreen("quest-map");
     }
-  };
-
-  const applyRewards = (powerUps: PowerUpId[], stars: number) => {
-    if (powerUps.length > 0) {
-      powerUps.forEach(power => grantPowerUp(power));
-      setSessionPowerUps(powerUps);
-    } else {
-      setSessionPowerUps([]);
-    }
-
-    if (stars > 0) {
-      awardStars(stars);
-    }
-    refreshProgress();
-  };
-
-  const handleAssessmentPass = (result: { correct: number; total: number; stars: number; powerUps: PowerUpId[] }) => {
-    if (!selectedTopic) return;
-
-    const chapter = getChapterByTopicId(selectedTopic.id);
-    if (chapter) {
-      recordChapterCompletion(chapter.id, selectedTopic.id);
-      if (result.correct >= 2) {
-        const nextChapterId = getNextChapterId(chapter.id);
-        if (nextChapterId) {
-          unlockChapter(nextChapterId);
-        }
-      }
-    }
-
-    const tier = result.correct === result.total ? 3 : result.correct === result.total - 1 ? 2 : 1;
-    updateStickerAlbum(selectedTopic.id, tier);
-
-    setPendingRewards({ powerUps: result.powerUps, stars: result.stars });
-
-    const challenge = getChallengeForTopic(selectedTopic.id);
-    if (challenge) {
-      setActiveChallenge(challenge);
-      setScreen("micro-challenge");
-    } else {
-      applyRewards(result.powerUps, result.stars);
-      setPendingRewards({ powerUps: [], stars: 0 });
-      setScreen("game");
-    }
-
-    refreshProgress();
-  };
-
-  const handleMicroChallengeFinish = (outcome: { success: boolean; stars: number; powerUpId: string | null }) => {
-    const rewardPowerUps = [...pendingRewards.powerUps];
-    if (outcome.success && outcome.powerUpId) {
-      rewardPowerUps.push(outcome.powerUpId as PowerUpId);
-    }
-    const totalStars = pendingRewards.stars + (outcome.success ? outcome.stars : 0);
-    applyRewards(rewardPowerUps, totalStars);
-    setPendingRewards({ powerUps: [], stars: 0 });
-    setActiveChallenge(null);
-    setScreen("game");
   };
 
   const applyRewards = (powerUps: PowerUpId[], stars: number) => {
@@ -470,15 +380,6 @@ export default function Index() {
           onFinish={handleMicroChallengeFinish}
           simpleMode={simpleMode}
           enableSpeech={speechEnabled}
-        />
-      )}
-      {screen === "assessment" && selectedTopic && assessmentQuestions && (
-        <AssessmentGate
-          topicId={selectedTopic.id}
-          topicTitle={selectedTopic.title}
-          questions={assessmentQuestions}
-          onPass={handleAssessmentPass}
-          onRetry={handleAssessmentRetry}
         />
       )}
       {screen === "game" && (
