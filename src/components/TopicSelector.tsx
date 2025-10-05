@@ -11,7 +11,11 @@ import { Badge } from "@/components/ui/badge";
 interface TopicSelectorProps {
   onSelectTopic: (topicId: number) => void;
   onBack: () => void;
+  onBackToMap?: () => void;
   mode: "study" | "practice" | "challenge";
+  availableTopicIds?: number[];
+  chapterTitle?: string;
+  simpleMode: boolean;
 }
 
 const subjectColors: Record<string, string> = {
@@ -24,12 +28,16 @@ const subjectColors: Record<string, string> = {
   programming: "text-indigo-600 bg-indigo-50 dark:bg-indigo-950/50",
 };
 
-export const TopicSelector = ({ onSelectTopic, onBack, mode }: TopicSelectorProps) => {
+export const TopicSelector = ({ onSelectTopic, onBack, onBackToMap, mode, availableTopicIds, chapterTitle, simpleMode }: TopicSelectorProps) => {
   const [selectedSubject, setSelectedSubject] = useState("all");
 
+  const topicsPool = availableTopicIds && availableTopicIds.length > 0
+    ? educationalTopics.filter(topic => availableTopicIds.includes(topic.id))
+    : educationalTopics;
+
   const filteredTopics = selectedSubject === "all"
-    ? educationalTopics
-    : educationalTopics.filter(topic => topic.subject === selectedSubject);
+    ? topicsPool
+    : topicsPool.filter(topic => topic.subject === selectedSubject);
 
   const getMasteryBadge = (topicId: number) => {
     const mastery = getMasteryLevel(topicId);
@@ -48,32 +56,49 @@ export const TopicSelector = ({ onSelectTopic, onBack, mode }: TopicSelectorProp
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        <Button
-          variant="ghost"
-          onClick={onBack}
-          className="mb-6"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Modes
-        </Button>
+        <div className="flex flex-wrap items-center gap-3 mb-6">
+          <Button
+            variant="ghost"
+            onClick={onBack}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            {simpleMode ? "Back" : "Back to Modes"}
+          </Button>
+          {onBackToMap && (
+            <Button variant="ghost" onClick={onBackToMap}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              {simpleMode ? "Quest map" : "Back to quest map"}
+            </Button>
+          )}
+        </div>
 
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-3">Select a Topic to Learn</h1>
+          <h1 className="text-4xl font-bold mb-3">{chapterTitle ? `${chapterTitle} Lessons` : "Select a Topic to Learn"}</h1>
           <p className="text-xl text-muted-foreground">
-            {mode === "study" && "Choose any topic to start learning"}
-            {mode === "practice" && "Complete the lesson, then play the game"}
-            {mode === "challenge" && "Advanced mixed-topic challenges"}
+            {simpleMode
+              ? "Pick a card to explore. Pass the quiz to earn stickers!"
+              : (
+                <>
+                  {mode === "study" && "Choose any topic to start learning"}
+                  {mode === "practice" && "Complete the lesson, then play the game"}
+                  {mode === "challenge" && "Advanced mixed-topic challenges"}
+                </>
+              )}
           </p>
         </div>
 
-        <SubjectFilter 
-          selectedSubject={selectedSubject}
-          onSubjectChange={setSelectedSubject}
-        />
+        {!availableTopicIds && (
+          <SubjectFilter
+            selectedSubject={selectedSubject}
+            onSubjectChange={setSelectedSubject}
+          />
+        )}
 
-        <div className="mb-6">
-          <LearningRecommendations onSelectTopic={onSelectTopic} />
-        </div>
+        {!availableTopicIds && (
+          <div className="mb-6">
+            <LearningRecommendations onSelectTopic={onSelectTopic} />
+          </div>
+        )}
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredTopics.map((topic, index) => {
