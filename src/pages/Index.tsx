@@ -1,3 +1,5 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { useCallback, useMemo, useState } from "react";
 import { StartScreen } from "@/components/StartScreen";
 import { EndlessRunner } from "@/components/EndlessRunner";
@@ -15,6 +17,20 @@ import { LeaderboardPanel } from "@/components/LeaderboardPanel";
 import { CreativeStudio } from "@/components/CreativeStudio";
 import { ParentTeacherView } from "@/components/ParentTeacherView";
 import { LearningMode } from "@/types/userProgress";
+import {
+  awardStars,
+  getStoredProgress,
+  grantPowerUp,
+  hasCompletedLesson,
+  recordChapterCompletion,
+  setActiveSkin,
+  spendStars,
+  unlockChapter,
+  unlockCreativeSkin,
+  updateLeaderboardProfile,
+  updateStickerAlbum,
+  updateStreak,
+} from "@/utils/progressStorage";
 import { hasCompletedLesson } from "@/utils/progressStorage";
 import {
   educationalTopics,
@@ -22,6 +38,13 @@ import {
   type EducationalTopic,
 } from "@/data/educationalContent";
 import { generateAssessmentQuestions } from "@/utils/questionBank";
+import {
+  getChapterByTopicId,
+  getChapterTopics,
+  getNextChapterId,
+  questChapters,
+} from "@/data/questMap";
+import { getChallengeForTopic, type MicroChallenge } from "@/data/microChallenges";
 
 type PowerUpId = "length-boost" | "angle-shield" | "fraction-freeze";
 
@@ -50,6 +73,19 @@ const Index = () => {
   const [lastScore, setLastScore] = useState(0);
   const [lastTopicId, setLastTopicId] = useState(1);
   const [highScore, setHighScore] = useState(0);
+  const [assessmentQuestions, setAssessmentQuestions] = useState<AssessmentQuestion[] | null>(null);
+  const [pendingRewards, setPendingRewards] = useState<{ powerUps: PowerUpId[]; stars: number }>({ powerUps: [], stars: 0 });
+  const [sessionPowerUps, setSessionPowerUps] = useState<PowerUpId[]>([]);
+  const [activeChallenge, setActiveChallenge] = useState<MicroChallenge | null>(null);
+  const [simpleMode, setSimpleMode] = useState(false);
+  const [speechEnabled, setSpeechEnabled] = useState(true);
+  const [playerProgress, setPlayerProgress] = useState(getStoredProgress);
+
+  const refreshProgress = () => setPlayerProgress(getStoredProgress());
+
+  useEffect(() => {
+    refreshProgress();
+  }, []);
   const [assessmentQuestions, setAssessmentQuestions] = useState<
     AssessmentQuestion[] | null
   >(null);
@@ -96,6 +132,7 @@ const Index = () => {
       setAssessmentQuestions(buildAssessmentQuestions(topic));
     } else {
       setAssessmentQuestions(null);
+    }
     }
 
     const lessonCompleted = hasCompletedLesson(topicId);
@@ -226,6 +263,7 @@ const Index = () => {
     setScreen("start");
     setSelectedTopicId(null);
     setAssessmentQuestions(null);
+    setSessionPowerUps([]);
   };
 
   const handleBackToModes = () => {

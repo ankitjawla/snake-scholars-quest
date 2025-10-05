@@ -7,12 +7,160 @@ import {
   type StickerAlbumEntry,
   type UserProgress,
 } from "@/types/userProgress";
+import { questChapters } from "@/data/questMap";
 
 const STORAGE_KEY = "snakerunner_progress";
 
+const MAX_CATCH_UP_TOKENS = 3;
+
+const createDefaultProgress = (): UserProgress => ({
+  topicsCompleted: [],
+  topicsInProgress: [],
+  lessonsViewed: [],
+  quizAttempts: [],
+  masteryLevels: [],
+  nextReviewDate: [],
+  stars: 0,
+  powerUps: [],
+  badges: [],
+  stickerAlbum: [],
+  streak: {
+    dailyCount: 0,
+    weeklyCount: 0,
+    lastSessionDate: null,
+    catchUpTokens: MAX_CATCH_UP_TOKENS,
+  },
+  chapterProgress: questChapters.length
+    ? [
+        {
+          chapterId: questChapters[0].id,
+          unlocked: true,
+          completedTopicIds: [],
+          badgeTier: 0,
+        },
+      ]
+    : [],
+  practiceHistory: [],
+  totalLearningMinutes: 0,
+  lastSessionDate: null,
+  creative: {
+    unlockedSkins: ["classic"],
+    activeSkin: "classic",
+  },
+});
+
+const getStartOfWeek = (date: Date) => {
+  const start = new Date(date);
+  const day = start.getDay();
+  const diff = start.getDate() - day;
+  start.setDate(diff);
+  start.setHours(0, 0, 0, 0);
+  return start;
+};
+
+const ensureChapterProgress = (progress: UserProgress) => {
+  if (!progress.chapterProgress) {
+    progress.chapterProgress = [];
+  }
+
+  const firstChapter = questChapters[0];
+  if (firstChapter && !progress.chapterProgress.some(entry => entry.chapterId === firstChapter.id)) {
+    progress.chapterProgress.push({
+      chapterId: firstChapter.id,
+      unlocked: true,
+      completedTopicIds: [],
+      badgeTier: 0,
+    });
+  }
+
+  progress.chapterProgress = progress.chapterProgress.map(entry => ({
+    ...entry,
+    completedTopicIds: Array.from(new Set(entry.completedTopicIds ?? [])),
+  }));
+};
+
+const getChapterTopicCount = (chapterId: string) =>
+  questChapters.find(chapter => chapter.id === chapterId)?.topicIds.length ?? 0;
+
 export const getStoredProgress = (): UserProgress => {
-  const stored = localStorage.getItem(STORAGE_KEY);
+  if (typeof window === "undefined") {
+    return createDefaultProgress();
+  }
+
+  let stored: string | null = null;
+  try {
+    stored = window.localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return createDefaultProgress();
+  }
+
   if (!stored) {
+    return createDefaultProgress();
+  }
+
+  try {
+    const parsed = JSON.parse(stored);
+
+    parsed.lessonsViewed = (parsed.lessonsViewed || []).map((item: any) => ({
+      ...item,
+      timestamp: new Date(item.timestamp),
+    }));
+    parsed.nextReviewDate = (parsed.nextReviewDate || []).map((item: any) => ({
+      ...item,
+      date: new Date(item.date),
+    }));
+
+    parsed.badges = (parsed.badges || []).map((badge: BadgeProgress) => ({
+      ...badge,
+      earnedAt: new Date(badge.earnedAt),
+    }));
+
+    parsed.practiceHistory = (parsed.practiceHistory || []).map(
+      (worksheet: PracticeWorksheet) => ({
+        ...worksheet,
+        createdAt: new Date(worksheet.createdAt),
+      }),
+    );
+
+    parsed.powerUps = (parsed.powerUps || []).map((powerUp: PowerUpInventory) => ({
+      ...powerUp,
+      lastEarned: powerUp.lastEarned ? new Date(powerUp.lastEarned) : undefined,
+    }));
+
+    parsed.streak = parsed.streak || {
+      dailyCount: 0,
+      weeklyCount: 0,
+      lastSessionDate: null,
+      catchUpTokens: MAX_CATCH_UP_TOKENS,
+    };
+    if (parsed.streak.lastSessionDate) {
+      parsed.streak.lastSessionDate = new Date(parsed.streak.lastSessionDate);
+    }
+    parsed.streak.catchUpTokens = Math.min(
+      MAX_CATCH_UP_TOKENS,
+      parsed.streak.catchUpTokens ?? MAX_CATCH_UP_TOKENS,
+    );
+
+    parsed.chapterProgress = (parsed.chapterProgress || []).map(
+      (chapter: ChapterProgress) => ({
+        ...chapter,
+        completedTopicIds: Array.from(new Set(chapter.completedTopicIds || [])),
+      }),
+    );
+
+    parsed.stickerAlbum = (parsed.stickerAlbum || []).map(
+      (sticker: StickerAlbumEntry) => ({ ...sticker }),
+    );
+
+    parsed.totalLearningMinutes = parsed.totalLearningMinutes || 0;
+    parsed.lastSessionDate = parsed.lastSessionDate
+      ? new Date(parsed.lastSessionDate)
+      : null;
+
+    parsed.stars = parsed.stars ?? 0;
+    parsed.creative = parsed.creative || {
+      unlockedSkins: ["classic"],
+      activeSkin: "classic",
     return {
       topicsCompleted: [],
       topicsInProgress: [],
@@ -39,6 +187,13 @@ export const getStoredProgress = (): UserProgress => {
         activeSkin: "classic",
       },
     };
+
+    ensureChapterProgress(parsed);
+
+    return parsed as UserProgress;
+  } catch (error) {
+    console.warn("Failed to parse stored progress", error);
+    return createDefaultProgress();
   }
 
   const parsed = JSON.parse(stored);
@@ -103,7 +258,12 @@ export const getStoredProgress = (): UserProgress => {
 };
 
 export const saveProgress = (progress: UserProgress) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+  } catch {
+    // Ignore write errors, e.g. in private browsing mode
+  }
 };
 
 export const hasCompletedLesson = (topicId: number): boolean => {
@@ -213,6 +373,13 @@ export const updateStickerAlbum = (topicId: number, tier: number) => {
 
 export const unlockChapter = (chapterId: string) => {
   const progress = getStoredProgress();
+  ensureChapterProgress(progress);
+  let entry = progress.chapterProgress.find(chapter => chapter.chapterId === chapterId);
+  if (!entry) {
+    entry = { chapterId, unlocked: true, completedTopicIds: [], badgeTier: 0 };
+    progress.chapterProgress.push(entry);
+  }
+  entry.unlocked = true;
   const chapters = progress.chapterProgress || [];
   const entry = chapters.find(chapter => chapter.chapterId === chapterId);
   if (entry) {
@@ -227,6 +394,30 @@ export const unlockChapter = (chapterId: string) => {
 
 export const recordChapterCompletion = (chapterId: string, topicId: number) => {
   const progress = getStoredProgress();
+  ensureChapterProgress(progress);
+  let entry = progress.chapterProgress.find(chapter => chapter.chapterId === chapterId);
+  if (!entry) {
+    entry = { chapterId, unlocked: true, completedTopicIds: [], badgeTier: 0 };
+    progress.chapterProgress.push(entry);
+  }
+
+  if (!entry.completedTopicIds.includes(topicId)) {
+    entry.completedTopicIds.push(topicId);
+  }
+
+  const totalTopics = getChapterTopicCount(chapterId);
+  const completionFraction = totalTopics > 0 ? entry.completedTopicIds.length / totalTopics : 0;
+
+  let newTier: 0 | 1 | 2 | 3 = 0;
+  if (completionFraction >= 1) {
+    newTier = 3;
+  } else if (completionFraction >= 2 / 3) {
+    newTier = 2;
+  } else if (completionFraction >= 1 / 3) {
+    newTier = 1;
+  }
+
+  entry.badgeTier = Math.max(entry.badgeTier, newTier);
   const entry = progress.chapterProgress.find(chapter => chapter.chapterId === chapterId);
   if (entry) {
     if (!entry.completedTopicIds.includes(topicId)) {
@@ -303,6 +494,9 @@ export const updateLearningMinutes = (minutes: number) => {
 
 export const updateStreak = (sessionDate = new Date()) => {
   const progress = getStoredProgress();
+  ensureChapterProgress(progress);
+  const lastSession = progress.streak.lastSessionDate;
+  const currentDate = new Date(sessionDate.toDateString());
   const lastSession = progress.streak.lastSessionDate;
   const currentDate = new Date(sessionDate.toDateString());
   const yesterday = new Date(currentDate);
@@ -312,6 +506,17 @@ export const updateStreak = (sessionDate = new Date()) => {
     progress.streak.dailyCount = 1;
     progress.streak.weeklyCount = 1;
   } else {
+    const lastDate = new Date(new Date(lastSession).toDateString());
+    const dayDiff = Math.floor(
+      (currentDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24),
+    );
+
+    if (dayDiff === 1) {
+      progress.streak.dailyCount += 1;
+    } else if (dayDiff > 1) {
+      const missedDays = dayDiff - 1;
+      if (progress.streak.catchUpTokens >= missedDays) {
+        progress.streak.catchUpTokens -= missedDays;
     const last = new Date(lastSession.toString());
     const lastDate = new Date(last.toDateString());
     if (lastDate.getTime() === yesterday.getTime()) {
@@ -323,6 +528,16 @@ export const updateStreak = (sessionDate = new Date()) => {
       } else {
         progress.streak.dailyCount = 1;
       }
+    } else if (dayDiff === 0) {
+      // Same-day session shouldn't change streak counts
+      progress.streak.lastSessionDate = currentDate;
+      progress.lastSessionDate = currentDate;
+      saveProgress(progress);
+      return progress.streak;
+    }
+
+    const weekStart = getStartOfWeek(currentDate);
+    const lastWeekStart = getStartOfWeek(lastDate);
     }
 
     const weekStart = new Date(currentDate);
@@ -333,6 +548,16 @@ export const updateStreak = (sessionDate = new Date()) => {
       progress.streak.weeklyCount = Math.max(progress.streak.weeklyCount, progress.streak.dailyCount);
     } else {
       progress.streak.weeklyCount = progress.streak.dailyCount;
+      progress.streak.catchUpTokens = Math.min(
+        MAX_CATCH_UP_TOKENS,
+        progress.streak.catchUpTokens + 1,
+      );
+    }
+  }
+
+  progress.streak.catchUpTokens = Math.min(MAX_CATCH_UP_TOKENS, progress.streak.catchUpTokens);
+  progress.streak.lastSessionDate = currentDate;
+  progress.lastSessionDate = currentDate;
     }
   }
 
