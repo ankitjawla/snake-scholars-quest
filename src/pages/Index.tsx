@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { StartScreen } from "@/components/StartScreen";
 import { EndlessRunner } from "@/components/EndlessRunner";
 import { TopicReveal } from "@/components/TopicReveal";
@@ -11,7 +11,12 @@ import { ProgressDashboard } from "@/components/ProgressDashboard";
 import { AssessmentGate } from "@/components/AssessmentGate";
 import { LearningMode } from "@/types/userProgress";
 import { hasCompletedLesson } from "@/utils/progressStorage";
-import { educationalTopics } from "@/data/educationalContent";
+import {
+  educationalTopics,
+  type AssessmentQuestion,
+  type EducationalTopic,
+} from "@/data/educationalContent";
+import { generateAssessmentQuestions } from "@/utils/questionBank";
 
 type Screen = "start" | "mode-select" | "topic-select" | "assessment" | "lesson" | "game" | "reveal" | "library" | "founders" | "progress";
 
@@ -22,6 +27,27 @@ const Index = () => {
   const [lastScore, setLastScore] = useState(0);
   const [lastTopicId, setLastTopicId] = useState(1);
   const [highScore, setHighScore] = useState(0);
+  const [assessmentQuestions, setAssessmentQuestions] = useState<
+    AssessmentQuestion[] | null
+  >(null);
+
+  const selectedTopic = useMemo(() => {
+    if (selectedTopicId == null) return null;
+    return educationalTopics.find(topic => topic.id === selectedTopicId) ?? null;
+  }, [selectedTopicId]);
+
+  const buildAssessmentQuestions = useCallback(
+    (topic: EducationalTopic): AssessmentQuestion[] =>
+      topic.assessmentQuestions ??
+      generateAssessmentQuestions(
+        topic.id,
+        topic.question,
+        topic.options,
+        topic.correctAnswer,
+        topic.explanation,
+      ),
+    [],
+  );
 
   const handleStart = () => {
     setScreen("mode-select");
@@ -34,20 +60,21 @@ const Index = () => {
 
   const handleTopicSelect = (topicId: number) => {
     setSelectedTopicId(topicId);
-    
-    // Check if lesson is already completed
-    if (hasCompletedLesson(topicId)) {
-      if (selectedMode === "practice") {
-        // Go to assessment gate before game
-        setScreen("assessment");
-      } else {
-        // In study mode, go to lesson
-        setScreen("lesson");
-      }
+
+    const topic = educationalTopics.find(t => t.id === topicId);
+    if (topic) {
+      setAssessmentQuestions(buildAssessmentQuestions(topic));
     } else {
-      // Show lesson first
-      setScreen("lesson");
+      setAssessmentQuestions(null);
     }
+
+    const lessonCompleted = hasCompletedLesson(topicId);
+    if (lessonCompleted && selectedMode === "practice") {
+      setScreen("assessment");
+      return;
+    }
+
+    setScreen("lesson");
   };
 
   const handleAssessmentPass = () => {
@@ -55,7 +82,9 @@ const Index = () => {
   };
 
   const handleAssessmentRetry = () => {
-    // Generate new shuffled questions and retry
+    if (selectedTopic) {
+      setAssessmentQuestions(buildAssessmentQuestions(selectedTopic));
+    }
     setScreen("assessment");
   };
 
@@ -89,6 +118,7 @@ const Index = () => {
   const handleBackToStart = () => {
     setScreen("start");
     setSelectedTopicId(null);
+    setAssessmentQuestions(null);
   };
 
   const handleBackToModes = () => {
@@ -144,29 +174,15 @@ const Index = () => {
           onBack={handleBackToTopics}
         />
       )}
-      {screen === "assessment" && selectedTopicId && (() => {
-        const topic = educationalTopics.find(t => t.id === selectedTopicId);
-        if (!topic) return null;
-        
-        const questions = topic.assessmentQuestions || 
-          require('@/utils/questionBank').generateAssessmentQuestions(
-            topic.id,
-            topic.question,
-            topic.options,
-            topic.correctAnswer,
-            topic.explanation
-          );
-        
-        return (
-          <AssessmentGate
-            topicId={selectedTopicId}
-            topicTitle={topic.title}
-            questions={questions}
-            onPass={handleAssessmentPass}
-            onRetry={handleAssessmentRetry}
-          />
-        );
-      })()}
+      {screen === "assessment" && selectedTopic && assessmentQuestions && (
+        <AssessmentGate
+          topicId={selectedTopic.id}
+          topicTitle={selectedTopic.title}
+          questions={assessmentQuestions}
+          onPass={handleAssessmentPass}
+          onRetry={handleAssessmentRetry}
+        />
+      )}
       {screen === "game" && (
         <EndlessRunner 
           onGameOver={handleGameOver} 
