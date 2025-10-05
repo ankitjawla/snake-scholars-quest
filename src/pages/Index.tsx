@@ -8,10 +8,12 @@ import { LearningModeSelector } from "@/components/LearningModeSelector";
 import { TopicSelector } from "@/components/TopicSelector";
 import { InteractiveLesson } from "@/components/InteractiveLesson";
 import { ProgressDashboard } from "@/components/ProgressDashboard";
+import { AssessmentGate } from "@/components/AssessmentGate";
 import { LearningMode } from "@/types/userProgress";
 import { hasCompletedLesson } from "@/utils/progressStorage";
+import { educationalTopics } from "@/data/educationalContent";
 
-type Screen = "start" | "mode-select" | "topic-select" | "lesson" | "game" | "reveal" | "library" | "founders" | "progress";
+type Screen = "start" | "mode-select" | "topic-select" | "assessment" | "lesson" | "game" | "reveal" | "library" | "founders" | "progress";
 
 const Index = () => {
   const [screen, setScreen] = useState<Screen>("start");
@@ -34,19 +36,33 @@ const Index = () => {
     setSelectedTopicId(topicId);
     
     // Check if lesson is already completed
-    if (hasCompletedLesson(topicId) && selectedMode === "practice") {
-      // Skip lesson, go directly to game
-      setScreen("game");
+    if (hasCompletedLesson(topicId)) {
+      if (selectedMode === "practice") {
+        // Go to assessment gate before game
+        setScreen("assessment");
+      } else {
+        // In study mode, go to lesson
+        setScreen("lesson");
+      }
     } else {
       // Show lesson first
       setScreen("lesson");
     }
   };
 
+  const handleAssessmentPass = () => {
+    setScreen("game");
+  };
+
+  const handleAssessmentRetry = () => {
+    // Generate new shuffled questions and retry
+    setScreen("assessment");
+  };
+
   const handleLessonComplete = () => {
     if (selectedMode === "practice") {
-      // After lesson in practice mode, start the game
-      setScreen("game");
+      // After lesson in practice mode, go to assessment gate
+      setScreen("assessment");
     } else {
       // In study mode, go back to topic selection
       setScreen("topic-select");
@@ -128,6 +144,29 @@ const Index = () => {
           onBack={handleBackToTopics}
         />
       )}
+      {screen === "assessment" && selectedTopicId && (() => {
+        const topic = educationalTopics.find(t => t.id === selectedTopicId);
+        if (!topic) return null;
+        
+        const questions = topic.assessmentQuestions || 
+          require('@/utils/questionBank').generateAssessmentQuestions(
+            topic.id,
+            topic.question,
+            topic.options,
+            topic.correctAnswer,
+            topic.explanation
+          );
+        
+        return (
+          <AssessmentGate
+            topicId={selectedTopicId}
+            topicTitle={topic.title}
+            questions={questions}
+            onPass={handleAssessmentPass}
+            onRetry={handleAssessmentRetry}
+          />
+        );
+      })()}
       {screen === "game" && (
         <EndlessRunner 
           onGameOver={handleGameOver} 

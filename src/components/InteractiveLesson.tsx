@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, BookOpen, Lightbulb, Play } from "lucide-react";
 import { educationalTopics } from "@/data/educationalContent";
 import { PracticeProblems } from "./PracticeProblems";
 import { markLessonComplete } from "@/utils/progressStorage";
+import { logSession } from "@/utils/progressLogger";
 import { useToast } from "@/hooks/use-toast";
 
 interface InteractiveLessonProps {
@@ -51,6 +52,15 @@ export const InteractiveLesson = ({ topicId, mode, onComplete, onBack }: Interac
   const handlePracticeComplete = (score: number) => {
     const timeSpent = Math.floor((Date.now() - startTime) / 1000);
     markLessonComplete(topicId, timeSpent);
+    
+    // Log session for analytics
+    logSession({
+      topicId,
+      topicTitle: topic.title,
+      activity: "lesson_viewed",
+      duration: timeSpent,
+      score,
+    });
     
     toast({
       title: "Lesson Complete! 🎉",

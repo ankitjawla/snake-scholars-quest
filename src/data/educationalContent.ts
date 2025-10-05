@@ -1,3 +1,10 @@
+export interface AssessmentQuestion {
+  question: string;
+  options: string[];
+  correctAnswer: number;
+  explanation: string;
+}
+
 export interface EducationalTopic {
   id: number;
   subject: "math" | "science" | "english" | "hindi" | "social-science" | "evs" | "programming";
@@ -14,24 +21,56 @@ export interface EducationalTopic {
   explanation: string;
   ncertChapter?: string;
   learningOutcome: string;
+  assessmentQuestions?: AssessmentQuestion[];
 }
 
+import { class5MathTopics } from "./class5MathTopics";
+
 export const educationalTopics: EducationalTopic[] = [
-  // MATHEMATICS (15 topics)
+  // Class 5 Math Topics from NCERT (Kid-friendly & simplified)
+  ...class5MathTopics,
+  
+  // MATHEMATICS (Advanced topics)
   {
     id: 1,
     subject: "math",
     grade: 5,
-    title: "Addition & Subtraction",
-    concept: "Combining numbers to find totals (addition) and finding the difference between numbers (subtraction). These are inverse operations that help us solve everyday problems.",
-    example: "If a library has 1,248 books and receives 567 new books, it now has 1,815 books. If 392 books are borrowed, 1,423 books remain on shelves.",
-    funFact: "The + and - symbols we use today were invented in Germany around 1489! Before that, people wrote 'plus' and 'minus' in full words.",
-    emoji: "➕",
-    question: "A school collected 1,248 plastic bottles in January and 1,567 bottles in February for recycling. If they recycled 2,350 bottles, how many bottles are still waiting to be recycled?",
-    options: ["465 bottles", "565 bottles", "665 bottles", "765 bottles"],
+    title: "Large Numbers",
+    ncertChapter: "Chapter 1: We the Travellers - I (Reading and Writing Large Numbers)",
+    concept: "Numbers can be super big! Like the number of stars in the sky or people in India. We use place values to read and write big numbers: Ones, Tens, Hundreds, Thousands, Ten Thousands. The bigger the place, the bigger the value!",
+    example: "India has about 1,40,00,00,000 (140 crore) people! That's written as: 1 Arab + 40 Crore. To write it: we group digits by commas from right: 1,40,00,00,000. Cool, right?",
+    funFact: "Did you know? The number 1 followed by 100 zeros is called a 'Googol'! That's where Google got its name (but they spelled it differently)! 🔢",
+    emoji: "🔢",
+    question: "A city has 52,847 people. What is the place value of digit 5 in this number?",
+    options: ["50,000 (Fifty thousand)", "5,000 (Five thousand)", "500 (Five hundred)", "5 (Five)"],
     correctAnswer: 0,
-    explanation: "First add: 1,248 + 1,567 = 2,815 total bottles collected. Then subtract what was recycled: 2,815 - 2,350 = 465 bottles still waiting!",
-    learningOutcome: "Perform multi-step addition and subtraction with 4-digit numbers in real-world contexts"
+    explanation: "The digit 5 is in the ten thousands place! So its value is 5 × 10,000 = 50,000. Remember: count places from right to left!",
+    learningOutcome: "Read, write and understand place values of numbers up to 1 lakh (100,000)",
+    assessmentQuestions: [
+      {
+        question: "Write this number in words: 43,256",
+        options: [
+          "Forty-three thousand two hundred fifty-six",
+          "Four thousand three hundred twenty-five",
+          "Forty-three hundred fifty-six",
+          "Four lakh three thousand"
+        ],
+        correctAnswer: 0,
+        explanation: "Break it down: 43,000 (forty-three thousand) + 200 (two hundred) + 56 (fifty-six) = Forty-three thousand two hundred fifty-six!"
+      },
+      {
+        question: "What is the value of 7 in the number 76,543?",
+        options: ["70,000", "7,000", "700", "70"],
+        correctAnswer: 0,
+        explanation: "7 is in the ten thousands place, so its value is 7 × 10,000 = 70,000!"
+      },
+      {
+        question: "Which number is greater: 58,432 or 58,423?",
+        options: ["58,432", "58,423", "Both are equal", "Cannot compare"],
+        correctAnswer: 0,
+        explanation: "Compare digit by digit from left: 5=5, 8=8, 4=4, 3>2. So 58,432 is greater!"
+      }
+    ]
   },
   {
     id: 2,

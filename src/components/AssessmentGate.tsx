@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CheckCircle2, XCircle, Trophy, Zap } from "lucide-react";
 import { toast } from "sonner";
+import { logSession } from "@/utils/progressLogger";
 
 interface AssessmentQuestion {
   question: string;
@@ -19,13 +20,14 @@ interface AssessmentGateProps {
   onRetry: () => void;
 }
 
-export const AssessmentGate = ({ topicTitle, questions, onPass, onRetry }: AssessmentGateProps) => {
+export const AssessmentGate = ({ topicId, topicTitle, questions, onPass, onRetry }: AssessmentGateProps) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [answers, setAnswers] = useState<(number | null)[]>(Array(questions.length).fill(null));
   const [assessmentComplete, setAssessmentComplete] = useState(false);
+  const [startTime] = useState(Date.now());
 
   const currentQuestion = questions[currentQuestionIndex];
   const requiredCorrect = 2;
@@ -63,6 +65,20 @@ export const AssessmentGate = ({ topicTitle, questions, onPass, onRetry }: Asses
       // Assessment complete
       const finalCorrect = correctCount + (selectedAnswer === currentQuestion.correctAnswer ? 1 : 0);
       setAssessmentComplete(true);
+      
+      const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+      const score = (finalCorrect / totalQuestions) * 100;
+      
+      // Log assessment session
+      logSession({
+        topicId,
+        topicTitle,
+        activity: finalCorrect >= requiredCorrect ? "assessment_passed" : "quiz_attempted",
+        duration: timeSpent,
+        score,
+        correctAnswers: finalCorrect,
+        totalQuestions,
+      });
       
       if (finalCorrect >= requiredCorrect) {
         toast.success(`Amazing! You got ${finalCorrect}/${totalQuestions} correct! 🎮`, { duration: 3000 });
