@@ -9,12 +9,32 @@ interface StartScreenProps {
   onViewTopics: () => void;
   onViewFounders: () => void;
   onViewProgress: () => void;
+  onViewParent: () => void;
+  onViewLeaderboard: () => void;
+  onOpenCreative: () => void;
+  onToggleSimpleMode: () => void;
+  onToggleSpeech: () => void;
+  simpleMode: boolean;
+  speechEnabled: boolean;
   highScore: number;
 }
 
-export const StartScreen = ({ onStart, onViewTopics, onViewFounders, onViewProgress, highScore }: StartScreenProps) => {
+export const StartScreen = ({
+  onStart,
+  onViewTopics,
+  onViewFounders,
+  onViewProgress,
+  onViewParent,
+  onViewLeaderboard,
+  onOpenCreative,
+  onToggleSimpleMode,
+  onToggleSpeech,
+  simpleMode,
+  speechEnabled,
+  highScore,
+}: StartScreenProps) => {
   const streak = calculateStudyStreak();
-  
+
   return (
     <AccessibilityWrapper pageTitle="Welcome" announcement="Welcome to Snake Scholars Quest">
       <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4 overflow-hidden">
@@ -29,15 +49,17 @@ export const StartScreen = ({ onStart, onViewTopics, onViewFounders, onViewProgr
         </div>
 
         <h1 className="text-5xl md:text-7xl font-bold text-background mb-4 animate-slide-up" style={{ animationDelay: "0.1s" }}>
-          Snake Runner
+          {simpleMode ? "Snake Quest" : "Snake Runner"}
         </h1>
-        
+
         <p className="text-xl md:text-2xl text-background/90 mb-2 animate-slide-up" style={{ animationDelay: "0.2s" }}>
-          Learn Math & Science While You Run!
+          {simpleMode ? "Play. Learn. Level up." : "Learn Math & Science While You Run!"}
         </p>
-        
+
         <p className="text-lg text-background/80 mb-10 max-w-xl mx-auto animate-slide-up" style={{ animationDelay: "0.3s" }}>
-          Swipe to move lanes, collect insects, avoid obstacles, and discover amazing science & math concepts!
+          {simpleMode
+            ? "Unlock lands, collect stickers, and power up your snake with math moves."
+            : "Swipe to move lanes, collect insects, avoid obstacles, and discover amazing science & math concepts!"}
         </p>
 
         {highScore > 0 && (
@@ -59,8 +81,8 @@ export const StartScreen = ({ onStart, onViewTopics, onViewFounders, onViewProgr
         )}
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up mb-8" style={{ animationDelay: "0.5s" }}>
-          <Button 
-            size="lg" 
+          <Button
+            size="lg"
             variant="hero"
             onClick={onStart}
             className="group animate-pulse-glow text-lg"
@@ -86,6 +108,18 @@ export const StartScreen = ({ onStart, onViewTopics, onViewFounders, onViewProgr
           </Button>
         </div>
 
+        <div className="flex flex-wrap justify-center gap-3 animate-fade-in" style={{ animationDelay: "0.55s" }}>
+          <Button size="sm" variant="heroOutline" onClick={onOpenCreative}>
+            🎨 Creative Studio
+          </Button>
+          <Button size="sm" variant="heroOutline" onClick={onViewLeaderboard}>
+            🏅 Leaderboard
+          </Button>
+          <Button size="sm" variant="heroOutline" onClick={onViewParent}>
+            👪 Parent View
+          </Button>
+        </div>
+
         <div className="mt-12 grid grid-cols-3 gap-4 max-w-lg mx-auto animate-slide-up" style={{ animationDelay: "0.6s" }}>
           <div className="bg-background/10 backdrop-blur-sm border border-background/20 rounded-xl p-4">
             <div className="text-3xl mb-1">➕</div>
@@ -106,13 +140,22 @@ export const StartScreen = ({ onStart, onViewTopics, onViewFounders, onViewProgr
         </div>
 
         <div className="mt-6 animate-slide-up" style={{ animationDelay: "0.8s" }}>
-          <Button 
+          <Button
             variant="ghost"
             onClick={onViewFounders}
             className="text-background/90 hover:text-background hover:bg-background/10"
           >
             <Users className="mr-2 h-4 w-4" />
             Meet the Founders
+          </Button>
+        </div>
+
+        <div className="mt-6 flex flex-wrap justify-center gap-3 text-sm text-background/80 animate-slide-up" style={{ animationDelay: "0.85s" }}>
+          <Button variant="ghost" size="sm" onClick={onToggleSimpleMode}>
+            {simpleMode ? "Switch to Explorer mode" : "Simple words mode"}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onToggleSpeech}>
+            {speechEnabled ? "Mute voice" : "Turn on read aloud"}
           </Button>
         </div>
         </div>
