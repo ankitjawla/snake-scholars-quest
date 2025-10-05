@@ -2,10 +2,11 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Trophy, Target, TrendingUp, BookOpen, Star, Award, Flame } from "lucide-react";
+import { ArrowLeft, Trophy, Target, TrendingUp, BookOpen, Star, Award, Flame, Zap, Clock } from "lucide-react";
 import { getStoredProgress } from "@/utils/progressStorage";
 import { educationalTopics } from "@/data/educationalContent";
 import { StickerAlbum } from "./StickerAlbum";
+import type { ChallengeAttempt } from "@/types/challenge";
 
 interface ProgressDashboardProps {
   onBack: () => void;
@@ -53,6 +54,25 @@ export const ProgressDashboard = ({ onBack, onReviewTopic, onOpenParent, onOpenC
     .filter(m => m.level === "mastered")
     .slice(-5)
     .reverse();
+
+  const challengeHistory = progress.challengeHistory || [];
+  const recentChallenges = challengeHistory.slice(-3).reverse();
+  const bestChallenge = challengeHistory.reduce<ChallengeAttempt | null>((best, attempt) => {
+    if (!best || attempt.accuracy > best.accuracy) {
+      return attempt;
+    }
+    return best;
+  }, null);
+  const topChallengeStreak = challengeHistory.reduce((max, attempt) => Math.max(max, attempt.bestStreak), 0);
+  const challengeStarsTotal = challengeHistory.reduce((sum, attempt) => sum + attempt.starsEarned, 0);
+  const formatChallengeDate = (date: Date) =>
+    new Date(date).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const formatChallengeDuration = (seconds: number) => {
+    if (seconds < 60) return `${seconds}s`;
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}m ${secs.toString().padStart(2, "0")}s`;
+  };
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -147,6 +167,51 @@ export const ProgressDashboard = ({ onBack, onReviewTopic, onOpenParent, onOpenC
             <p className="text-xs text-muted-foreground">Last session: {progress.lastSessionDate ? new Date(progress.lastSessionDate).toLocaleDateString() : "—"}</p>
           </Card>
         </div>
+
+        {challengeHistory.length > 0 && (
+          <Card className="p-6 mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Zap className="w-6 h-6 text-secondary" />
+              <h2 className="text-2xl font-bold">{simpleMode ? "Challenge highlights" : "Challenge Mode Highlights"}</h2>
+            </div>
+            <div className="grid md:grid-cols-4 gap-4 mb-4">
+              <div className="bg-muted p-4 rounded-lg">
+                <p className="text-sm text-muted-foreground">{simpleMode ? "Attempts" : "Total Attempts"}</p>
+                <p className="text-2xl font-semibold">{challengeHistory.length}</p>
+              </div>
+              <div className="bg-muted p-4 rounded-lg">
+                <p className="text-sm text-muted-foreground">{simpleMode ? "Best accuracy" : "Best Accuracy"}</p>
+                <p className="text-2xl font-semibold">{bestChallenge ? `${bestChallenge.accuracy}%` : "—"}</p>
+              </div>
+              <div className="bg-muted p-4 rounded-lg">
+                <p className="text-sm text-muted-foreground">{simpleMode ? "Top streak" : "Longest Streak"}</p>
+                <p className="text-2xl font-semibold">{topChallengeStreak}</p>
+              </div>
+              <div className="bg-muted p-4 rounded-lg">
+                <p className="text-sm text-muted-foreground">{simpleMode ? "Stars" : "Stars Earned"}</p>
+                <p className="text-2xl font-semibold">{challengeStarsTotal}</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              {recentChallenges.map(attempt => (
+                <div key={attempt.id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 p-3 bg-muted/70 rounded-lg">
+                  <div>
+                    <p className="font-semibold">{formatChallengeDate(attempt.completedAt)}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {attempt.correct}/{attempt.total} correct • {attempt.accuracy}% • {formatChallengeDuration(attempt.durationSeconds)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Star className="w-4 h-4 text-accent" />
+                    <span>+{attempt.starsEarned} ⭐</span>
+                    <Clock className="w-4 h-4 text-primary" />
+                    <span>{attempt.fastestAnswer ? `${attempt.fastestAnswer}s` : "—"}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
 
         {topicsNeedingReview.length > 0 && (
           <Card className="p-6 mb-6">

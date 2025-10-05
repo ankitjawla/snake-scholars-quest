@@ -29,6 +29,7 @@ import {
   updateLeaderboardProfile,
   updateStickerAlbum,
   updateStreak,
+  recordChallengeAttempt,
 } from "@/utils/progressStorage";
 import {
   educationalTopics,
@@ -43,6 +44,9 @@ import {
   questChapters,
 } from "@/data/questMap";
 import { getChallengeForTopic, type MicroChallenge } from "@/data/microChallenges";
+import { ChallengeArena } from "@/components/ChallengeArena";
+import { ChallengeSummary } from "@/components/ChallengeSummary";
+import type { ChallengeResult } from "@/types/challenge";
 
 type PowerUpId = "length-boost" | "angle-shield" | "fraction-freeze";
 
@@ -61,7 +65,9 @@ type Screen =
   | "progress"
   | "leaderboard"
   | "creative"
-  | "parent";
+  | "parent"
+  | "challenge"
+  | "challenge-summary";
 
 export default function Index() {
   const [screen, setScreen] = useState<Screen>("start");
@@ -78,6 +84,7 @@ export default function Index() {
   const [simpleMode, setSimpleMode] = useState(false);
   const [speechEnabled, setSpeechEnabled] = useState(true);
   const [playerProgress, setPlayerProgress] = useState(getStoredProgress);
+  const [challengeResult, setChallengeResult] = useState<ChallengeResult | null>(null);
 
   const refreshProgress = () => setPlayerProgress(getStoredProgress());
 
@@ -111,7 +118,14 @@ export default function Index() {
 
   const handleModeSelect = (mode: LearningMode) => {
     setSelectedMode(mode);
-    setScreen("quest-map");
+    setSelectedTopicId(null);
+    setSelectedChapterId(null);
+    if (mode === "challenge") {
+      setChallengeResult(null);
+      setScreen("challenge");
+    } else {
+      setScreen("quest-map");
+    }
   };
 
   const handleOpenChapter = (chapterId: string) => {
@@ -249,10 +263,12 @@ export default function Index() {
     setSelectedTopicId(null);
     setAssessmentQuestions(null);
     setSessionPowerUps([]);
+    setChallengeResult(null);
   };
 
   const handleBackToModes = () => {
     setScreen("mode-select");
+    setChallengeResult(null);
   };
 
   const handleBackToQuestMap = () => {
@@ -311,6 +327,40 @@ export default function Index() {
 
   const leaderboardProfile = playerProgress.leaderboardProfile;
 
+  const handleChallengeComplete = (result: ChallengeResult) => {
+    setChallengeResult(result);
+    setSelectedMode("challenge");
+    const updatedStars = awardStars(result.stars);
+    recordChallengeAttempt({
+      correct: result.correct,
+      total: result.total,
+      accuracy: result.accuracy,
+      bestStreak: result.bestStreak,
+      starsEarned: result.stars,
+      durationSeconds: result.timeSpent,
+      fastestAnswer: result.fastestAnswer,
+    });
+    refreshProgress();
+    toast.success(`Rewards collected! Total stars: ${updatedStars}`, { duration: 2500 });
+    setScreen("challenge-summary");
+  };
+
+  const handleChallengeExit = () => {
+    setChallengeResult(null);
+    setScreen("mode-select");
+  };
+
+  const handleChallengeReplay = () => {
+    setChallengeResult(null);
+    setScreen("challenge");
+  };
+
+  const handleChallengeLeaderboard = () => {
+    setChallengeResult(null);
+    refreshProgress();
+    setScreen("leaderboard");
+  };
+
   return (
     <>
       {screen === "start" && (
@@ -333,6 +383,14 @@ export default function Index() {
         <LearningModeSelector
           onSelectMode={handleModeSelect}
           onBack={handleBackToStart}
+        />
+      )}
+      {screen === "challenge" && (
+        <ChallengeArena
+          onExit={handleBackToModes}
+          onComplete={handleChallengeComplete}
+          simpleMode={simpleMode}
+          speechEnabled={speechEnabled}
         />
       )}
       {screen === "quest-map" && (
@@ -419,6 +477,15 @@ export default function Index() {
           averageScore={averageScore}
           profile={leaderboardProfile}
           onSaveProfile={handleSaveLeaderboardProfile}
+          simpleMode={simpleMode}
+        />
+      )}
+      {screen === "challenge-summary" && challengeResult && (
+        <ChallengeSummary
+          result={challengeResult}
+          onReplay={handleChallengeReplay}
+          onBack={handleChallengeExit}
+          onLeaderboard={handleChallengeLeaderboard}
           simpleMode={simpleMode}
         />
       )}
