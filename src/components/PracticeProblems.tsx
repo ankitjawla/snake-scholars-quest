@@ -66,8 +66,13 @@ export const PracticeProblems = ({ problems, onComplete }: PracticeProblemsProps
         <Progress value={progress} className="h-2" />
       </div>
 
-      <Card className="p-6">
-        <h3 className="text-xl font-bold mb-6">{currentProblem.question}</h3>
+      <Card className="p-6 animate-fade-in">
+        <div className="mb-6">
+          <div className="text-4xl mb-4 animate-bounce-soft">🤔</div>
+          <h3 className="text-xl md:text-2xl font-bold text-foreground leading-relaxed">
+            {currentProblem.question}
+          </h3>
+        </div>
 
         <div className="space-y-3 mb-6">
           {currentProblem.options.map((option, index) => {
