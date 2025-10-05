@@ -296,5 +296,186 @@ export const class5MathTopics: EducationalTopic[] = [
         explanation: "1 kg = 1,000 g. So 5 kg = 5 × 1,000 = 5,000 g!"
       }
     ]
+  },
+  {
+    id: 109,
+    subject: "math",
+    grade: 5,
+    title: "Perimeter & Area Adventures",
+    ncertChapter: "Chapter 11: Area and Its Boundary",
+    concept:
+      "Perimeter measures the distance around a shape. Area measures the space inside a shape. We use square units like cm² or m² for area and plain units like cm or m for perimeter.",
+    example:
+      "Coach Riya wants a running track around a 20 m by 10 m rectangular field. Perimeter = 2 × (20 + 10) = 60 m of ribbon. To grow fresh grass inside, the gardener needs Area = 20 × 10 = 200 m² of seeds!",
+    funFact:
+      "India's cricket stadiums are measured in meters too! The Eden Gardens boundary is about 70 meters from the pitch on each side.",
+    emoji: "📐",
+    question: "A school garden is a rectangle 18 m long and 12 m wide. How many meters of fencing are needed for the boundary?",
+    options: ["60 m", "72 m", "84 m", "96 m"],
+    correctAnswer: 0,
+    explanation:
+      "Add the length and width then double it: (18 + 12) × 2 = 30 × 2 = 60 meters of fencing.",
+    learningOutcome: "Calculate perimeter and area of rectangles and composite shapes",
+    assessmentQuestions: [
+      {
+        question: "What is the area of a rectangle with length 25 m and width 8 m?",
+        options: ["200 m²", "180 m²", "220 m²", "160 m²"],
+        correctAnswer: 0,
+        explanation: "Area = length × width = 25 × 8 = 200 square meters."
+      },
+      {
+        question: "A square playground has a perimeter of 64 m. What is the length of one side?",
+        options: ["16 m", "12 m", "8 m", "32 m"],
+        correctAnswer: 0,
+        explanation: "Perimeter of a square = 4 × side, so side = 64 ÷ 4 = 16 m."
+      },
+      {
+        question: "Which shape has a larger area: Rectangle (12 m × 9 m) or rectangle (15 m × 6 m)?",
+        options: ["12 × 9 rectangle", "15 × 6 rectangle", "Both equal", "Cannot compare"],
+        correctAnswer: 0,
+        explanation: "12 × 9 = 108 m² while 15 × 6 = 90 m². The first rectangle covers more space."
+      },
+      {
+        question: "A floor is made of two rectangles: 5 m × 4 m and 3 m × 2 m. What is the total area?",
+        options: ["26 m²", "20 m²", "34 m²", "28 m²"],
+        correctAnswer: 0,
+        explanation: "Find each area: 5 × 4 = 20 and 3 × 2 = 6. Add them: 20 + 6 = 26 m²."
+      }
+    ]
+  },
+  {
+    id: 110,
+    subject: "math",
+    grade: 5,
+    title: "Timetables & Time Travel",
+    ncertChapter: "Chapter 4: Tick-Tick-Tick",
+    concept:
+      "We measure time in hours and minutes. 60 minutes = 1 hour. Timetables help us understand schedules like train timings, school periods, and sports fixtures.",
+    example:
+      "A metro leaves Central Station at 7:45 AM and reaches the museum at 8:32 AM. Travel time = 47 minutes. If you catch the 9:10 AM metro home, you get 38 minutes inside the museum!",
+    funFact:
+      "The Indian Railways timetable is one of the largest in the world. It coordinates more than 13,000 trains every day!",
+    emoji: "⏱️",
+    question: "The school assembly starts at 7:55 AM and classes begin at 8:15 AM. How long is the assembly?",
+    options: ["10 minutes", "15 minutes", "20 minutes", "30 minutes"],
+    correctAnswer: 2,
+    explanation: "Count the minutes from 7:55 to 8:15. That's 20 minutes in total.",
+    learningOutcome: "Read timetables, calculate elapsed time, and plan schedules",
+    assessmentQuestions: [
+      {
+        question: "A cartoon starts at 4:35 PM and ends at 5:05 PM. What is its duration?",
+        options: ["20 minutes", "25 minutes", "30 minutes", "35 minutes"],
+        correctAnswer: 2,
+        explanation: "From 4:35 to 5:05 is exactly 30 minutes."
+      },
+      {
+        question: "The 6:20 PM bus is delayed by 18 minutes. When will it arrive?",
+        options: ["6:28 PM", "6:38 PM", "6:42 PM", "6:48 PM"],
+        correctAnswer: 1,
+        explanation: "Add 18 minutes to 6:20 PM to get 6:38 PM."
+      },
+      {
+        question: "Recess is 15 minutes long. If it ends at 11:10 AM, when did it begin?",
+        options: ["10:55 AM", "10:57 AM", "10:58 AM", "10:50 AM"],
+        correctAnswer: 0,
+        explanation: "Work backwards: 11:10 − 15 minutes = 10:55 AM."
+      },
+      {
+        question: "A train timetable shows departures every 25 minutes starting at 9:00 AM. When is the fourth train?",
+        options: ["9:50 AM", "10:00 AM", "10:15 AM", "10:25 AM"],
+        correctAnswer: 2,
+        explanation: "List them: 9:00, 9:25, 9:50, 10:15. The fourth departure is 10:15 AM."
+      }
+    ]
+  },
+  {
+    id: 111,
+    subject: "math",
+    grade: 5,
+    title: "Smart Estimation",
+    ncertChapter: "Chapter 3: How Many Squares?",
+    concept:
+      "Estimation helps us get quick answers by rounding numbers to nearby tens, hundreds, or thousands.",
+    example:
+      "A bookstore sells 198 comics, 305 novels, and 412 magazines in a week. Round to the nearest hundred: ≈ 200 + 300 + 400 = 900 books. The manager can order about 900 new books for next week.",
+    funFact:
+      "Mathematician Shakuntala Devi could estimate cube roots in seconds. She was called the 'Human Computer'!",
+    emoji: "🧠",
+    question: "Round 4,785 to the nearest hundred.",
+    options: ["4,700", "4,780", "4,800", "4,900"],
+    correctAnswer: 2,
+    explanation: "The tens digit is 8 (five or more), so 4,785 rounds up to 4,800.",
+    learningOutcome: "Use rounding and compatible numbers for quick estimates",
+    assessmentQuestions: [
+      {
+        question: "Which is the best estimate for 198 + 403?",
+        options: ["500", "600", "650", "700"],
+        correctAnswer: 1,
+        explanation: "Round to hundreds: 198 ≈ 200 and 403 ≈ 400. 200 + 400 = 600."
+      },
+      {
+        question: "Estimate the product: 48 × 19",
+        options: ["1,000", "900", "950", "1,100"],
+        correctAnswer: 0,
+        explanation: "48 ≈ 50 and 19 ≈ 20. 50 × 20 = 1,000, a close estimate."
+      },
+      {
+        question: "Roughly how many minutes are in 5 hours?",
+        options: ["240", "250", "300", "320"],
+        correctAnswer: 2,
+        explanation: "60 minutes × 5 hours ≈ 300 minutes."
+      },
+      {
+        question: "A shopkeeper estimates ₹78 + ₹145 by rounding to the nearest ten. What estimate does she get?",
+        options: ["₹220", "₹230", "₹240", "₹210"],
+        correctAnswer: 1,
+        explanation: "₹78 ≈ ₹80 and ₹145 ≈ ₹150. 80 + 150 = ₹230."
+      }
+    ]
+  },
+  {
+    id: 112,
+    subject: "math",
+    grade: 5,
+    title: "Data Detectives",
+    ncertChapter: "Chapter 14: Smart Charts",
+    concept:
+      "Data is information we collect. We can show it using tally marks, pictographs, and bar graphs to spot patterns easily.",
+    example:
+      "Five friends tracked their daily steps: 4k, 6k, 7k, 5k, 9k. A bar graph makes it easy to see who walked the most. Divya's 9k steps win!",
+    funFact:
+      "ISRO scientists use data charts to track rocket fuel, speed, and altitude during launches!",
+    emoji: "📊",
+    question: "In a pictograph, each 🐾 stands for 200 steps. If Meera has 🐾🐾🐾🐾, how many steps did she walk?",
+    options: ["600 steps", "800 steps", "1,000 steps", "1,200 steps"],
+    correctAnswer: 1,
+    explanation: "4 paw prints × 200 steps each = 800 steps.",
+    learningOutcome: "Interpret charts and create simple graphs from data",
+    assessmentQuestions: [
+      {
+        question: "A bar graph shows books read: Aryan 6, Kavya 4, Leena 8, Mohit 5. Who read the most?",
+        options: ["Aryan", "Kavya", "Leena", "Mohit"],
+        correctAnswer: 2,
+        explanation: "Leena's bar reaches 8 books, the tallest bar."
+      },
+      {
+        question: "How many votes in total if the tally marks show |||| ||| ?",
+        options: ["5", "6", "7", "8"],
+        correctAnswer: 3,
+        explanation: "|||| = 5 and ||| = 3. Altogether 5 + 3 = 8 votes."
+      },
+      {
+        question: "Which graph is best for showing 'Favourite Sports' data collected from classmates?",
+        options: ["Bar graph", "Line graph", "Pie chart", "Flow chart"],
+        correctAnswer: 0,
+        explanation: "A bar graph compares categories like cricket, football, or badminton clearly."
+      },
+      {
+        question: "A table shows weekly rainfall (mm): Mon 12, Tue 10, Wed 4, Thu 0, Fri 6. What was the total rainfall?",
+        options: ["30 mm", "28 mm", "32 mm", "34 mm"],
+        correctAnswer: 2,
+        explanation: "Add them: 12 + 10 + 4 + 0 + 6 = 32 mm of rain."
+      }
+    ]
   }
 ];

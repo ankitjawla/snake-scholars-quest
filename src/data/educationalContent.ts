@@ -1061,5 +1061,278 @@ export const educationalTopics: EducationalTopic[] = [
     correctAnswer: 1,
     explanation: "Following order of operations (BODMAS): y * 2 = 20, then x + 20 = 25. Multiplication happens before addition!",
     learningOutcome: "Understand variables and operations"
+  },
+  {
+    id: 64,
+    subject: "science",
+    subCategory: "Space Science",
+    grade: 5,
+    title: "Solar System Explorers",
+    concept:
+      "The Sun is at the center of our solar system. Eight planets orbit it at different speeds. Inner planets are rocky, outer planets are gas giants or icy worlds.",
+    example:
+      "Mercury zips around the Sun in just 88 days, while Neptune takes 165 Earth years! Earth takes 365 days to complete one orbit, giving us seasons.",
+    funFact:
+      "A day on Venus is longer than its year. It spins so slowly that it takes 243 Earth days to rotate once!",
+    emoji: "🪐",
+    question: "Which planet is known as the 'Red Planet'?",
+    options: ["Mercury", "Venus", "Earth", "Mars"],
+    correctAnswer: 3,
+    explanation: "Mars looks red because its surface has iron-rich dust that rusts and reflects a reddish color.",
+    learningOutcome: "Identify key features of planets in our solar system",
+    assessmentQuestions: [
+      {
+        question: "Which planet is farthest from the Sun?",
+        options: ["Mars", "Jupiter", "Saturn", "Neptune"],
+        correctAnswer: 3,
+        explanation: "Neptune orbits at the edge of our solar system, much farther than the other planets listed."
+      },
+      {
+        question: "How long does Earth take to orbit the Sun once?",
+        options: ["24 hours", "365 days", "30 days", "100 days"],
+        correctAnswer: 1,
+        explanation: "One Earth year equals 365 days—the time it takes to circle the Sun."
+      },
+      {
+        question: "What force keeps planets moving around the Sun?",
+        options: ["Wind", "Gravity", "Sunlight", "Clouds"],
+        correctAnswer: 1,
+        explanation: "Gravity is the invisible pull between objects. The Sun's gravity keeps planets in orbit."
+      }
+    ]
+  },
+  {
+    id: 65,
+    subject: "science",
+    subCategory: "Physics",
+    grade: 5,
+    title: "Simple Machines & Force",
+    concept:
+      "Simple machines like levers, pulleys, and inclined planes change how force is applied. They make work easier by reducing the effort needed.",
+    example:
+      "A see-saw on a playground is a lever. A long crowbar helps lift a heavy rock because the longer arm multiplies force.",
+    funFact:
+      "Ancient Egyptians likely used ramps and rollers—simple machines—to build the pyramids!",
+    emoji: "⚙️",
+    question: "Which simple machine uses a wheel with a rope to lift heavy loads?",
+    options: ["Lever", "Pulley", "Inclined plane", "Wedge"],
+    correctAnswer: 1,
+    explanation: "A pulley has a wheel and rope. Pulling down on the rope lifts the load upward with less effort.",
+    learningOutcome: "Recognize simple machines and how they change force",
+    assessmentQuestions: [
+      {
+        question: "Which object is a lever?",
+        options: ["Ramp", "Seesaw", "Screw", "Wheelbarrow"],
+        correctAnswer: 1,
+        explanation: "A seesaw pivots around a fixed point (fulcrum), which makes it a lever."
+      },
+      {
+        question: "A ramp used to push a box into a truck is which simple machine?",
+        options: ["Inclined plane", "Pulley", "Wheel and axle", "Wedge"],
+        correctAnswer: 0,
+        explanation: "Ramps are inclined planes that spread the effort over a longer distance."
+      },
+      {
+        question: "Why do screws have spirals?",
+        options: ["For decoration", "To turn light into heat", "To change a turning force into forward motion", "To store air"],
+        correctAnswer: 2,
+        explanation: "A screw is an inclined plane wrapped around a cylinder. Turning it converts rotation into forward motion."
+      }
+    ]
+  },
+  {
+    id: 66,
+    subject: "evs",
+    subCategory: "Environmental Science",
+    grade: 5,
+    title: "Reduce, Reuse, Recycle",
+    concept:
+      "The 3Rs help us care for Earth. Reduce means use less, Reuse means use things again, Recycle means turn waste into new items.",
+    example:
+      "Carrying a steel water bottle reduces plastic waste. Using old jars for pencil holders reuses materials. Recycling paper saves trees.",
+    funFact:
+      "Recycling one aluminium can saves enough energy to run a TV for 3 hours!",
+    emoji: "♻️",
+    question: "Which action best shows 'Reduce'?",
+    options: ["Printing every worksheet twice", "Carrying a cloth bag instead of taking plastic bags", "Throwing bottles away", "Burning dry leaves"],
+    correctAnswer: 1,
+    explanation: "A cloth bag reduces the number of new plastic bags needed each time you shop.",
+    learningOutcome: "Adopt eco-friendly habits for managing waste",
+    assessmentQuestions: [
+      {
+        question: "Which bin should vegetable peels go into?",
+        options: ["Dry waste", "Wet waste", "E-waste", "Glass"],
+        correctAnswer: 1,
+        explanation: "Vegetable peels are organic wet waste that can become compost."
+      },
+      {
+        question: "How many Rs are there in the waste management slogan?",
+        options: ["2", "3", "4", "5"],
+        correctAnswer: 1,
+        explanation: "Reduce, Reuse, Recycle—three powerful steps to protect the environment."
+      },
+      {
+        question: "Which activity is an example of recycling?",
+        options: ["Passing clothes to a younger cousin", "Using both sides of paper", "Melting old glass bottles to make new ones", "Buying more plastic toys"],
+        correctAnswer: 2,
+        explanation: "Turning used glass into new products is recycling—it gives materials a second life."
+      }
+    ]
+  },
+  {
+    id: 67,
+    subject: "english",
+    subCategory: "Literature",
+    grade: 5,
+    title: "Poetry Toolbox",
+    concept:
+      "Poets use special devices like rhyme, rhythm, similes, and metaphors to make writing musical and imaginative.",
+    example:
+      "Simile: 'The snake moves like a ribbon in the wind.' Metaphor: 'The classroom was a buzzing hive.'",
+    funFact:
+      "Rabindranath Tagore wrote poems that children still sing today. He won the Nobel Prize for Literature in 1913!",
+    emoji: "🎵",
+    question: "Which poetic device compares two things using the words 'like' or 'as'?",
+    options: ["Metaphor", "Simile", "Alliteration", "Personification"],
+    correctAnswer: 1,
+    explanation: "A simile uses 'like' or 'as' to compare—'brave as a lion'.",
+    learningOutcome: "Identify common poetic devices in short poems",
+    assessmentQuestions: [
+      {
+        question: "'Busy bees buzzed by the bush' is an example of which device?",
+        options: ["Alliteration", "Metaphor", "Hyperbole", "Onomatopoeia"],
+        correctAnswer: 0,
+        explanation: "Alliteration repeats beginning sounds—here, the letter 'b'."
+      },
+      {
+        question: "Which line has a metaphor?",
+        options: ["The river sparkled like glass", "The classroom was a jungle", "As light as a feather", "Brighter than the sun"],
+        correctAnswer: 1,
+        explanation: "'Classroom was a jungle' directly says one thing is another—that's a metaphor."
+      },
+      {
+        question: "What do we call the beat or pattern of stressed sounds in a poem?",
+        options: ["Tone", "Rhythm", "Setting", "Dialogue"],
+        correctAnswer: 1,
+        explanation: "Rhythm is the musical pattern created by stressed and unstressed syllables."
+      }
+    ]
+  },
+  {
+    id: 68,
+    subject: "english",
+    subCategory: "Writing",
+    grade: 5,
+    title: "Diary Writing",
+    concept:
+      "A diary entry records personal experiences, feelings, and reflections in first-person voice. It usually includes the date and is written like a friendly conversation with yourself.",
+    example:
+      "Tuesday, 5 March: Today our class coded a tiny snake game. I felt nervous at first but proud when it worked!",
+    funFact:
+      "Anne Frank's diary became famous for sharing her real experiences during World War II.",
+    emoji: "📔",
+    question: "Which sentence best fits the start of a diary entry?",
+    options: ["Once upon a time...", "Dear Diary, today was the science fair!", "The moral of the story is...", "To whom it may concern"],
+    correctAnswer: 1,
+    explanation: "Diary entries often begin with a friendly greeting like 'Dear Diary' followed by the day's highlight.",
+    learningOutcome: "Write reflective diary entries with feelings and details",
+    assessmentQuestions: [
+      {
+        question: "Which point of view is used in diary writing?",
+        options: ["First person", "Second person", "Third person", "All of them"],
+        correctAnswer: 0,
+        explanation: "You write about your own experiences using 'I' and 'my'."
+      },
+      {
+        question: "What should appear at the top of a diary entry?",
+        options: ["Chapter title", "Date and sometimes time", "Bibliography", "Signature of parents"],
+        correctAnswer: 1,
+        explanation: "Dates help track when events happened in your diary."
+      },
+      {
+        question: "Which detail adds emotion to a diary entry?",
+        options: ["I scored 8/10 in maths and felt super proud!", "The capital of India is New Delhi.", "There are 24 hours in a day.", "Water boils at 100°C."],
+        correctAnswer: 0,
+        explanation: "Sharing feelings (proud) makes the entry personal and reflective."
+      }
+    ]
+  },
+  {
+    id: 69,
+    subject: "social-science",
+    subCategory: "Geography",
+    grade: 5,
+    title: "States & Capitals of India",
+    concept:
+      "India has 28 states and 8 Union Territories. Each state has a capital where the government works from.",
+    example:
+      "Maharashtra's capital is Mumbai, Karnataka's capital is Bengaluru, and Assam's capital is Dispur.",
+    funFact:
+      "Hyderabad is a shared capital for both Telangana and Andhra Pradesh (for a limited period).",
+    emoji: "🗽",
+    question: "What is the capital of Rajasthan?",
+    options: ["Jaipur", "Bhopal", "Lucknow", "Patna"],
+    correctAnswer: 0,
+    explanation: "Jaipur, the Pink City, is the capital of Rajasthan.",
+    learningOutcome: "Match Indian states with their capitals",
+    assessmentQuestions: [
+      {
+        question: "Mumbai is the capital of which Indian state?",
+        options: ["Gujarat", "Maharashtra", "Goa", "Kerala"],
+        correctAnswer: 1,
+        explanation: "Mumbai is the bustling capital city of Maharashtra."
+      },
+      {
+        question: "Which state's capital is Itanagar?",
+        options: ["Arunachal Pradesh", "Assam", "Sikkim", "Tripura"],
+        correctAnswer: 0,
+        explanation: "Itanagar is the capital of Arunachal Pradesh in northeast India."
+      },
+      {
+        question: "Which capital city lies on the coast of the Bay of Bengal?",
+        options: ["Jaipur", "Chennai", "Shimla", "Gangtok"],
+        correctAnswer: 1,
+        explanation: "Chennai in Tamil Nadu sits along the Bay of Bengal shoreline."
+      }
+    ]
+  },
+  {
+    id: 70,
+    subject: "social-science",
+    subCategory: "Civics",
+    grade: 5,
+    title: "National Symbols of India",
+    concept:
+      "National symbols represent the pride and identity of our country. They include animals, birds, flags, songs, and emblems.",
+    example:
+      "The tricolour flag (Tiranga) has saffron for courage, white for peace, green for growth, and the blue Ashoka Chakra with 24 spokes.",
+    funFact:
+      "The national anthem 'Jana Gana Mana' takes about 52 seconds to sing properly!",
+    emoji: "🇮🇳",
+    question: "Which animal is India's national animal?",
+    options: ["Elephant", "Bengal Tiger", "Peacock", "Lion"],
+    correctAnswer: 1,
+    explanation: "The Bengal tiger represents strength and grace, so it is our national animal.",
+    learningOutcome: "Recall key national symbols and their meanings",
+    assessmentQuestions: [
+      {
+        question: "What is India's national bird?",
+        options: ["Sparrow", "Peacock", "Parrot", "Eagle"],
+        correctAnswer: 1,
+        explanation: "The peacock, with its colourful feathers, is India's national bird."
+      },
+      {
+        question: "Name India's national flower.",
+        options: ["Rose", "Sunflower", "Lotus", "Marigold"],
+        correctAnswer: 2,
+        explanation: "The lotus symbolises purity and is our national flower."
+      },
+      {
+        question: "How many spokes are there in the Ashoka Chakra on the national flag?",
+        options: ["12", "18", "24", "36"],
+        correctAnswer: 2,
+        explanation: "The Ashoka Chakra has 24 spokes, representing constant progress."
+      }
+    ]
   }
 ];
