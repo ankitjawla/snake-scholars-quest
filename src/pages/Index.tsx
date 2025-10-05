@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useCallback, useMemo, useState } from "react";
 import { StartScreen } from "@/components/StartScreen";
 import { EndlessRunner } from "@/components/EndlessRunner";
 import { TopicReveal } from "@/components/TopicReveal";
@@ -30,6 +31,7 @@ import {
   updateStickerAlbum,
   updateStreak,
 } from "@/utils/progressStorage";
+import { hasCompletedLesson } from "@/utils/progressStorage";
 import {
   educationalTopics,
   type AssessmentQuestion,
@@ -84,6 +86,9 @@ const Index = () => {
   useEffect(() => {
     refreshProgress();
   }, []);
+  const [assessmentQuestions, setAssessmentQuestions] = useState<
+    AssessmentQuestion[] | null
+  >(null);
 
   const selectedTopic = useMemo(() => {
     if (selectedTopicId == null) return null;
@@ -128,6 +133,16 @@ const Index = () => {
     } else {
       setAssessmentQuestions(null);
     }
+    }
+
+    const lessonCompleted = hasCompletedLesson(topicId);
+    if (lessonCompleted && selectedMode === "practice") {
+      setScreen("assessment");
+      return;
+    }
+
+    setScreen("lesson");
+  };
 
     const lessonCompleted = hasCompletedLesson(topicId);
     if (lessonCompleted && selectedMode === "practice") {
@@ -380,6 +395,15 @@ const Index = () => {
           onFinish={handleMicroChallengeFinish}
           simpleMode={simpleMode}
           enableSpeech={speechEnabled}
+        />
+      )}
+      {screen === "assessment" && selectedTopic && assessmentQuestions && (
+        <AssessmentGate
+          topicId={selectedTopic.id}
+          topicTitle={selectedTopic.title}
+          questions={assessmentQuestions}
+          onPass={handleAssessmentPass}
+          onRetry={handleAssessmentRetry}
         />
       )}
       {screen === "game" && (
