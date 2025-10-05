@@ -65,7 +65,24 @@ type Screen =
   | "creative"
   | "parent";
 
-const Index = () => {
+type Screen =
+  | "start"
+  | "mode-select"
+  | "quest-map"
+  | "topic-select"
+  | "assessment"
+  | "micro-challenge"
+  | "lesson"
+  | "game"
+  | "reveal"
+  | "library"
+  | "founders"
+  | "progress"
+  | "leaderboard"
+  | "creative"
+  | "parent";
+
+export default function Index() {
   const [screen, setScreen] = useState<Screen>("start");
   const [selectedMode, setSelectedMode] = useState<LearningMode>("practice");
   const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
@@ -166,6 +183,64 @@ const Index = () => {
     } else {
       setScreen("quest-map");
     }
+  };
+
+  const applyRewards = (powerUps: PowerUpId[], stars: number) => {
+    if (powerUps.length > 0) {
+      powerUps.forEach(power => grantPowerUp(power));
+      setSessionPowerUps(powerUps);
+    } else {
+      setSessionPowerUps([]);
+    }
+
+    if (stars > 0) {
+      awardStars(stars);
+    }
+    refreshProgress();
+  };
+
+  const handleAssessmentPass = (result: { correct: number; total: number; stars: number; powerUps: PowerUpId[] }) => {
+    if (!selectedTopic) return;
+
+    const chapter = getChapterByTopicId(selectedTopic.id);
+    if (chapter) {
+      recordChapterCompletion(chapter.id, selectedTopic.id);
+      if (result.correct >= 2) {
+        const nextChapterId = getNextChapterId(chapter.id);
+        if (nextChapterId) {
+          unlockChapter(nextChapterId);
+        }
+      }
+    }
+
+    const tier = result.correct === result.total ? 3 : result.correct === result.total - 1 ? 2 : 1;
+    updateStickerAlbum(selectedTopic.id, tier);
+
+    setPendingRewards({ powerUps: result.powerUps, stars: result.stars });
+
+    const challenge = getChallengeForTopic(selectedTopic.id);
+    if (challenge) {
+      setActiveChallenge(challenge);
+      setScreen("micro-challenge");
+    } else {
+      applyRewards(result.powerUps, result.stars);
+      setPendingRewards({ powerUps: [], stars: 0 });
+      setScreen("game");
+    }
+
+    refreshProgress();
+  };
+
+  const handleMicroChallengeFinish = (outcome: { success: boolean; stars: number; powerUpId: string | null }) => {
+    const rewardPowerUps = [...pendingRewards.powerUps];
+    if (outcome.success && outcome.powerUpId) {
+      rewardPowerUps.push(outcome.powerUpId as PowerUpId);
+    }
+    const totalStars = pendingRewards.stars + (outcome.success ? outcome.stars : 0);
+    applyRewards(rewardPowerUps, totalStars);
+    setPendingRewards({ powerUps: [], stars: 0 });
+    setActiveChallenge(null);
+    setScreen("game");
   };
 
   const applyRewards = (powerUps: PowerUpId[], stars: number) => {
@@ -466,6 +541,4 @@ const Index = () => {
       )}
     </>
   );
-};
-
-export default Index;
+}
