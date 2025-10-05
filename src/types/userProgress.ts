@@ -1,3 +1,5 @@
+import type { ChallengeAttempt } from "./challenge";
+
 export interface PowerUpInventory {
   id: string;
   quantity: number;
@@ -81,6 +83,7 @@ export interface UserProgress {
   lastSessionDate: Date | null;
   leaderboardProfile?: LeaderboardProfile;
   creative: CreativeUnlocks;
+  challengeHistory: ChallengeAttempt[];
 }
 
 export interface LearningSession {

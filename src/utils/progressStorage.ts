@@ -7,6 +7,7 @@ import {
   type StickerAlbumEntry,
   type UserProgress,
 } from "@/types/userProgress";
+import type { ChallengeAttempt } from "@/types/challenge";
 import { questChapters } from "@/data/questMap";
 
 const STORAGE_KEY = "snakerunner_progress";
@@ -47,6 +48,7 @@ const createDefaultProgress = (): UserProgress => ({
     unlockedSkins: ["classic"],
     activeSkin: "classic",
   },
+  challengeHistory: [],
 });
 
 const getStartOfWeek = (date: Date) => {
@@ -127,6 +129,14 @@ export const getStoredProgress = (): UserProgress => {
       lastEarned: powerUp.lastEarned ? new Date(powerUp.lastEarned) : undefined,
     }));
 
+    parsed.challengeHistory = (parsed.challengeHistory || []).map(
+      (attempt: ChallengeAttempt) => ({
+        ...attempt,
+        completedAt: attempt.completedAt ? new Date(attempt.completedAt) : new Date(),
+        fastestAnswer: attempt.fastestAnswer ?? null,
+      }),
+    );
+
     parsed.streak = parsed.streak || {
       dailyCount: 0,
       weeklyCount: 0,
@@ -162,6 +172,8 @@ export const getStoredProgress = (): UserProgress => {
       unlockedSkins: ["classic"],
       activeSkin: "classic",
     };
+
+    parsed.challengeHistory = parsed.challengeHistory || [];
 
     ensureChapterProgress(parsed);
 
@@ -338,6 +350,33 @@ export const recordBadge = (id: string, tier: 1 | 2 | 3) => {
     saveProgress(progress);
   }
   return progress.badges;
+};
+
+export const recordChallengeAttempt = (
+  attempt: Omit<ChallengeAttempt, "id" | "completedAt"> & { id?: string; completedAt?: Date },
+) => {
+  const progress = getStoredProgress();
+  const entry: ChallengeAttempt = {
+    id: attempt.id ?? `challenge-${Date.now()}`,
+    correct: attempt.correct,
+    total: attempt.total,
+    accuracy: attempt.accuracy,
+    bestStreak: attempt.bestStreak,
+    starsEarned: attempt.starsEarned,
+    durationSeconds: attempt.durationSeconds,
+    fastestAnswer: attempt.fastestAnswer ?? null,
+    completedAt: attempt.completedAt ?? new Date(),
+  };
+
+  progress.challengeHistory = progress.challengeHistory || [];
+  progress.challengeHistory.push(entry);
+
+  if (progress.challengeHistory.length > 25) {
+    progress.challengeHistory = progress.challengeHistory.slice(-25);
+  }
+
+  saveProgress(progress);
+  return progress.challengeHistory;
 };
 
 export const logPracticeWorksheet = (worksheet: PracticeWorksheet) => {
