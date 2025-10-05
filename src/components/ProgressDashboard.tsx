@@ -2,21 +2,24 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Trophy, Target, TrendingUp, BookOpen, Star } from "lucide-react";
+import { ArrowLeft, Trophy, Target, TrendingUp, BookOpen, Star, Award, Flame } from "lucide-react";
 import { getStoredProgress } from "@/utils/progressStorage";
 import { educationalTopics } from "@/data/educationalContent";
+import { StickerAlbum } from "./StickerAlbum";
 
 interface ProgressDashboardProps {
   onBack: () => void;
   onReviewTopic: (topicId: number) => void;
+  onOpenParent: () => void;
+  onOpenCreative: () => void;
+  simpleMode: boolean;
 }
 
-export const ProgressDashboard = ({ onBack, onReviewTopic }: ProgressDashboardProps) => {
+export const ProgressDashboard = ({ onBack, onReviewTopic, onOpenParent, onOpenCreative, simpleMode }: ProgressDashboardProps) => {
   const progress = getStoredProgress();
-  
+
   const totalTopics = educationalTopics.length;
   const completedTopics = progress.topicsCompleted.length;
-  const inProgressTopics = progress.topicsInProgress.length;
   const completionRate = (completedTopics / totalTopics) * 100;
 
   const masteredCount = progress.masteryLevels.filter(m => m.level === "mastered").length;
@@ -27,12 +30,10 @@ export const ProgressDashboard = ({ onBack, onReviewTopic }: ProgressDashboardPr
     ? progress.quizAttempts.reduce((sum, quiz) => sum + quiz.score, 0) / totalQuizzes
     : 0;
 
-  // Topics that need review (based on spaced repetition)
   const topicsNeedingReview = progress.nextReviewDate
     .filter(review => new Date(review.date) <= new Date())
     .slice(0, 5);
 
-  // Weak areas (topics with low quiz scores)
   const weakAreas = progress.quizAttempts
     .filter(quiz => quiz.score < 60)
     .reduce((acc, quiz) => {
@@ -48,7 +49,6 @@ export const ProgressDashboard = ({ onBack, onReviewTopic }: ProgressDashboardPr
     .sort((a, b) => a.avgScore - b.avgScore)
     .slice(0, 3);
 
-  // Recent achievements
   const recentlyMastered = progress.masteryLevels
     .filter(m => m.level === "mastered")
     .slice(-5)
@@ -59,10 +59,19 @@ export const ProgressDashboard = ({ onBack, onReviewTopic }: ProgressDashboardPr
       <div className="max-w-6xl mx-auto">
         <Button variant="ghost" onClick={onBack} className="mb-6">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Home
+          {simpleMode ? "Back" : "Back to Home"}
         </Button>
 
-        <h1 className="text-4xl font-bold mb-8">Your Learning Progress</h1>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-4xl font-bold">{simpleMode ? "My Progress" : "Your Learning Progress"}</h1>
+            <p className="text-muted-foreground">{simpleMode ? "Stars, stickers, and streaks" : "Track concepts, badges, and streaks across Snake Scholars Quest."}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onOpenParent}>👪 {simpleMode ? "Grown-ups" : "Parent View"}</Button>
+            <Button variant="outline" onClick={onOpenCreative}>🎨 {simpleMode ? "Snake skins" : "Creative Studio"}</Button>
+          </div>
+        </div>
 
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           <Card className="p-6">
@@ -106,6 +115,39 @@ export const ProgressDashboard = ({ onBack, onReviewTopic }: ProgressDashboardPr
           </Card>
         </div>
 
+        <div className="grid md:grid-cols-3 gap-4 mb-8">
+          <Card className="p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <Flame className="w-6 h-6 text-orange-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Daily streak</p>
+                <p className="text-2xl font-bold">{progress.streak.dailyCount} days</p>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">Catch-up tokens left: {progress.streak.catchUpTokens}</p>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <Award className="w-6 h-6 text-amber-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Stars collected</p>
+                <p className="text-2xl font-bold">{progress.stars}</p>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">Spend stars on power-ups and custom skins.</p>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <TrendingUp className="w-6 h-6 text-primary" />
+              <div>
+                <p className="text-sm text-muted-foreground">Time on task</p>
+                <p className="text-2xl font-bold">{progress.totalLearningMinutes} mins</p>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">Last session: {progress.lastSessionDate ? new Date(progress.lastSessionDate).toLocaleDateString() : "—"}</p>
+          </Card>
+        </div>
+
         {topicsNeedingReview.length > 0 && (
           <Card className="p-6 mb-6">
             <div className="flex items-center gap-2 mb-4">
@@ -113,7 +155,7 @@ export const ProgressDashboard = ({ onBack, onReviewTopic }: ProgressDashboardPr
               <h2 className="text-2xl font-bold">Due for Review</h2>
             </div>
             <p className="text-muted-foreground mb-4">
-              These topics are ready for review based on spaced repetition
+              {simpleMode ? "Ready for a quick refresh" : "These topics are ready for review based on spaced repetition"}
             </p>
             <div className="space-y-2">
               {topicsNeedingReview.map(review => {
@@ -126,7 +168,7 @@ export const ProgressDashboard = ({ onBack, onReviewTopic }: ProgressDashboardPr
                       <p className="text-sm text-muted-foreground">{topic.subject}</p>
                     </div>
                     <Button size="sm" onClick={() => onReviewTopic(review.topicId)}>
-                      Review Now
+                      {simpleMode ? "Play" : "Review Now"}
                     </Button>
                   </div>
                 );
@@ -135,6 +177,11 @@ export const ProgressDashboard = ({ onBack, onReviewTopic }: ProgressDashboardPr
           </Card>
         )}
 
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-4">Sticker Album</h2>
+          <StickerAlbum stickers={progress.stickerAlbum} simpleMode={simpleMode} />
+        </div>
+
         {weakAreas.length > 0 && (
           <Card className="p-6 mb-6">
             <div className="flex items-center gap-2 mb-4">
@@ -142,7 +189,7 @@ export const ProgressDashboard = ({ onBack, onReviewTopic }: ProgressDashboardPr
               <h2 className="text-2xl font-bold">Areas to Improve</h2>
             </div>
             <p className="text-muted-foreground mb-4">
-              Focus on these topics to boost your understanding
+              {simpleMode ? "Practice these again" : "Focus on these topics to boost your understanding"}
             </p>
             <div className="space-y-2">
               {weakAreas.map(area => {
@@ -158,7 +205,7 @@ export const ProgressDashboard = ({ onBack, onReviewTopic }: ProgressDashboardPr
                       </div>
                     </div>
                     <Button size="sm" variant="outline" onClick={() => onReviewTopic(area.topicId)} className="ml-4">
-                      Practice
+                      {simpleMode ? "Practice" : "Practice"}
                     </Button>
                   </div>
                 );
@@ -171,7 +218,7 @@ export const ProgressDashboard = ({ onBack, onReviewTopic }: ProgressDashboardPr
           <Card className="p-6">
             <div className="flex items-center gap-2 mb-4">
               <Star className="w-6 h-6 text-secondary" />
-              <h2 className="text-2xl font-bold">Recently Mastered</h2>
+              <h2 className="text-2xl font-bold">{simpleMode ? "Latest stickers" : "Recently Mastered"}</h2>
             </div>
             <div className="grid md:grid-cols-2 gap-3">
               {recentlyMastered.map(mastery => {

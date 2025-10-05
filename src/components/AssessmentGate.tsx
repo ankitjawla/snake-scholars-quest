@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { CheckCircle2, XCircle, Trophy, Zap } from "lucide-react";
+import { CheckCircle2, XCircle, Trophy, Zap, Volume2 } from "lucide-react";
 import { toast } from "sonner";
 import { logSession } from "@/utils/progressLogger";
 
@@ -16,11 +16,22 @@ interface AssessmentGateProps {
   topicId: number;
   topicTitle: string;
   questions: AssessmentQuestion[];
-  onPass: () => void;
+  onPass: (result: { correct: number; total: number; stars: number; powerUps: ("length-boost" | "angle-shield" | "fraction-freeze")[] }) => void;
   onRetry: () => void;
+  simpleMode: boolean;
+  speechEnabled: boolean;
 }
 
-export const AssessmentGate = ({ topicId, topicTitle, questions, onPass, onRetry }: AssessmentGateProps) => {
+const speakQuestion = (text: string, enable: boolean) => {
+  if (!enable) return;
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.rate = 0.9;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+};
+
+export const AssessmentGate = ({ topicId, topicTitle, questions, onPass, onRetry, simpleMode, speechEnabled }: AssessmentGateProps) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -92,6 +103,12 @@ export const AssessmentGate = ({ topicId, topicTitle, questions, onPass, onRetry
   const passed = finalScore >= requiredCorrect;
 
   if (assessmentComplete) {
+    const earnedPowerUps: ("length-boost" | "angle-shield" | "fraction-freeze")[] = [];
+    for (let i = 0; i < finalScore; i++) {
+      const cycle = ["length-boost", "angle-shield", "fraction-freeze"] as const;
+      earnedPowerUps.push(cycle[i % cycle.length]);
+    }
+    const starReward = finalScore * 5;
     return (
       <div className="min-h-screen bg-background py-8 px-4 flex items-center justify-center">
         <Card className="max-w-2xl w-full p-8 text-center animate-fade-in">
@@ -103,9 +120,13 @@ export const AssessmentGate = ({ topicId, topicTitle, questions, onPass, onRetry
                 You got {finalScore}/{totalQuestions} questions correct!
               </p>
               <p className="text-lg mb-8">
-                You're ready to play the <span className="font-bold text-primary">{topicTitle}</span> game!
+                You're ready to play the <span className="font-bold text-primary">{topicTitle}</span> game! ⭐ +{starReward}
               </p>
-              <Button size="lg" onClick={onPass} className="bg-gradient-primary text-background">
+              <Button
+                size="lg"
+                onClick={() => onPass({ correct: finalScore, total: totalQuestions, stars: starReward, powerUps: earnedPowerUps })}
+                className="bg-gradient-primary text-background"
+              >
                 <Zap className="mr-2 h-5 w-5" />
                 Start Game!
               </Button>
@@ -137,10 +158,12 @@ export const AssessmentGate = ({ topicId, topicTitle, questions, onPass, onRetry
       <div className="container mx-auto max-w-2xl">
         <div className="mb-6 text-center">
           <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-            🎯 Placement Assessment
+            🎯 {simpleMode ? "Chapter Quiz" : "Placement Assessment"}
           </h2>
           <p className="text-muted-foreground">
-            Answer {requiredCorrect} out of {totalQuestions} questions correctly to unlock the game!
+            {simpleMode
+              ? `Get ${requiredCorrect} of ${totalQuestions} right to enter the arcade!`
+              : `Answer ${requiredCorrect} out of ${totalQuestions} questions correctly to unlock the game!`}
           </p>
           <div className="mt-4 flex justify-center gap-2">
             {[...Array(totalQuestions)].map((_, i) => (
@@ -171,9 +194,16 @@ export const AssessmentGate = ({ topicId, topicTitle, questions, onPass, onRetry
               </span>
             </div>
             <div className="text-4xl mb-4 animate-bounce-soft">🤔</div>
-            <h3 className="text-xl md:text-2xl font-bold text-foreground leading-relaxed">
-              {currentQuestion.question}
-            </h3>
+            <div className="flex items-start gap-3">
+              <h3 className="flex-1 text-xl md:text-2xl font-bold text-foreground leading-relaxed">
+                {currentQuestion.question}
+              </h3>
+              {speechEnabled && (
+                <Button size="icon" variant="ghost" onClick={() => speakQuestion(currentQuestion.question, speechEnabled)}>
+                  <Volume2 className="h-5 w-5" />
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="space-y-3 mb-6">
@@ -234,7 +264,10 @@ export const AssessmentGate = ({ topicId, topicTitle, questions, onPass, onRetry
             </div>
           )}
 
-          <div className="flex justify-end">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">
+              {simpleMode ? "Listen and choose" : "Need help? Use hints from the lesson!"}
+            </span>
             {!showFeedback ? (
               <Button onClick={handleSubmit} disabled={selectedAnswer === null} size="lg">
                 Submit Answer

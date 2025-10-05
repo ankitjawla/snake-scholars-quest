@@ -6,10 +6,17 @@ import { toast } from "sonner";
 import { educationalTopics } from "@/data/educationalContent";
 import { HintCard } from "./HintCard";
 
+type PowerUpId = "length-boost" | "angle-shield" | "fraction-freeze";
+
 interface EndlessRunnerProps {
   onGameOver: (score: number, topicId: number) => void;
   onHome: () => void;
   topicId?: number;
+  activePowerUps?: PowerUpId[];
+  onPowerUpConsumed?: (powerUpId: PowerUpId) => void;
+  onEarnStars?: (stars: number) => void;
+  simpleMode: boolean;
+  skin?: string;
 }
 
 interface GameObject {
@@ -22,25 +29,44 @@ const LANES = 3;
 const LANE_WIDTH = 120;
 const GAME_SPEED = 4;
 
-export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProps) => {
+const skinStyles: Record<string, { primary: string; secondary: string }> = {
+  classic: { primary: "#22c55e", secondary: "#15803d" },
+  sunburst: { primary: "#f97316", secondary: "#facc15" },
+  nebula: { primary: "#a855f7", secondary: "#6366f1" },
+  geo: { primary: "#0ea5e9", secondary: "#14b8a6" },
+};
+
+export const EndlessRunner = ({
+  onGameOver,
+  onHome,
+  topicId,
+  activePowerUps = [],
+  onPowerUpConsumed,
+  onEarnStars,
+  simpleMode,
+  skin = "classic",
+}: EndlessRunnerProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [score, setScore] = useState(0);
   const [paused, setPaused] = useState(false);
   const [gameActive, setGameActive] = useState(true);
   const [currentHint, setCurrentHint] = useState<string>("");
   const [showHint, setShowHint] = useState(false);
-  
+  const [doublePoints, setDoublePoints] = useState(false);
+  const [shieldCharges, setShieldCharges] = useState(0);
+  const [slowTime, setSlowTime] = useState(false);
+
   const snakeLane = useRef(1); // 0, 1, or 2
   const snakeY = useRef(0);
   const isJumping = useRef(false);
   const jumpVelocity = useRef(0);
-  
+
   const insects = useRef<GameObject[]>([]);
   const obstacles = useRef<GameObject[]>([]);
   const roadOffset = useRef(0);
   const distance = useRef(0);
   const lastHintScore = useRef(0);
-  
+
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
 
@@ -55,6 +81,34 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
     "📚 Collect insects for bonus points!",
     "✨ Jump to avoid rocks on the road!",
   ];
+
+  useEffect(() => {
+    if (activePowerUps.includes("length-boost")) {
+      setDoublePoints(true);
+      const timer = setTimeout(() => setDoublePoints(false), 30000);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [activePowerUps]);
+
+  useEffect(() => {
+    if (activePowerUps.includes("angle-shield")) {
+      setShieldCharges(prev => prev + 1);
+    }
+  }, [activePowerUps]);
+
+  useEffect(() => {
+    if (activePowerUps.includes("fraction-freeze")) {
+      setSlowTime(true);
+      const timer = setTimeout(() => setSlowTime(false), 10000);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [activePowerUps]);
+
+  useEffect(() => {
+    activePowerUps.forEach(power => onPowerUpConsumed?.(power));
+  }, [activePowerUps, onPowerUpConsumed]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -76,7 +130,6 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
     const centerX = canvas.width / 2;
     const groundY = canvas.height - 80;
 
-    // Spawn objects
     const spawnInsect = () => {
       const lane = Math.floor(Math.random() * LANES);
       insects.current.push({
@@ -95,13 +148,11 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
       });
     };
 
-    // Initial spawns
     for (let i = 0; i < 3; i++) {
       setTimeout(spawnInsect, i * 1000);
     }
     setTimeout(spawnObstacle, 2000);
 
-    // Game loop
     let lastSpawnInsect = Date.now();
     let lastSpawnObstacle = Date.now();
     let animationId: number;
@@ -114,8 +165,9 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw animated road
-      roadOffset.current += GAME_SPEED;
+      const currentSpeed = slowTime ? GAME_SPEED * 0.5 : GAME_SPEED;
+
+      roadOffset.current += currentSpeed;
       if (roadOffset.current > 40) roadOffset.current = 0;
 
       const roadGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
@@ -124,7 +176,6 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
       ctx.fillStyle = roadGradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Lane markers
       ctx.strokeStyle = "#475569";
       ctx.lineWidth = 3;
       ctx.setLineDash([20, 20]);
@@ -137,7 +188,6 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
       }
       ctx.setLineDash([]);
 
-      // Ground line
       ctx.strokeStyle = "#22c55e";
       ctx.lineWidth = 4;
       ctx.beginPath();
@@ -145,14 +195,12 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
       ctx.lineTo(canvas.width, groundY);
       ctx.stroke();
 
-      // Update distance
-      distance.current += GAME_SPEED * 0.1;
+      distance.current += currentSpeed * 0.1;
 
-      // Handle jumping
       if (isJumping.current) {
         snakeY.current += jumpVelocity.current;
-        jumpVelocity.current += 0.8; // Gravity
-        
+        jumpVelocity.current += 0.8;
+
         if (snakeY.current >= 0) {
           snakeY.current = 0;
           isJumping.current = false;
@@ -160,18 +208,17 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
         }
       }
 
-      // Draw snake
       const snakeX = centerX + (snakeLane.current - 1) * LANE_WIDTH;
       const snakeDrawY = groundY - 40 + snakeY.current;
+      const palette = skinStyles[skin] || skinStyles.classic;
 
-      // Snake body segments
       for (let i = 3; i >= 0; i--) {
         const segmentY = snakeDrawY + i * 8;
         const size = 12 - i * 1;
 
         const gradient = ctx.createRadialGradient(snakeX, segmentY, 0, snakeX, segmentY, size);
-        gradient.addColorStop(0, "#22c55e");
-        gradient.addColorStop(1, "#15803d");
+        gradient.addColorStop(0, palette.primary);
+        gradient.addColorStop(1, palette.secondary);
 
         ctx.fillStyle = gradient;
         ctx.beginPath();
@@ -179,7 +226,6 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
         ctx.fill();
 
         if (i === 0) {
-          // Eyes
           ctx.fillStyle = "#ffffff";
           ctx.beginPath();
           ctx.arc(snakeX - 4, segmentY - 3, 3, 0, Math.PI * 2);
@@ -194,32 +240,24 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
         }
       }
 
-      // Update and draw insects
       insects.current = insects.current.filter((insect) => {
-        insect.y += GAME_SPEED;
+        insect.y += currentSpeed;
 
         if (insect.y > canvas.height) return false;
 
-        // Draw insect
         ctx.save();
         ctx.translate(insect.x, insect.y);
-        
-        // Insect body
         ctx.fillStyle = "#ef4444";
         ctx.beginPath();
         ctx.arc(0, 0, 6, 0, Math.PI * 2);
         ctx.fill();
-        
-        // Wings
         ctx.fillStyle = "rgba(239, 68, 68, 0.4)";
         ctx.beginPath();
         ctx.ellipse(-5, 0, 6, 3, -Math.PI / 4, 0, Math.PI * 2);
         ctx.ellipse(5, 0, 6, 3, Math.PI / 4, 0, Math.PI * 2);
         ctx.fill();
-        
         ctx.restore();
 
-        // Collision detection
         if (
           insect.lane === snakeLane.current &&
           insect.y > groundY - 60 &&
@@ -227,17 +265,20 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
           !isJumping.current
         ) {
           setScore((prev) => {
-            const newScore = prev + 10;
+            const earned = doublePoints ? 20 : 10;
+            const newScore = prev + earned;
             if (newScore % 100 === 0) {
               toast.success(`🎉 ${newScore} points!`, { duration: 1000 });
             }
-            // Show hint every 50 points
             if (newScore - lastHintScore.current >= 50 && hints.length > 0) {
               const randomHint = hints[Math.floor(Math.random() * hints.length)];
               setCurrentHint(randomHint);
               setShowHint(true);
               lastHintScore.current = newScore;
               setTimeout(() => setShowHint(false), 4000);
+            }
+            if (onEarnStars && newScore % 120 === 0) {
+              onEarnStars(doublePoints ? 6 : 3);
             }
             return newScore;
           });
@@ -247,16 +288,13 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
         return true;
       });
 
-      // Update and draw obstacles
       obstacles.current = obstacles.current.filter((obs) => {
-        obs.y += GAME_SPEED;
+        obs.y += currentSpeed;
 
         if (obs.y > canvas.height) return false;
 
-        // Draw obstacle (rock)
         ctx.save();
         ctx.translate(obs.x, obs.y);
-        
         ctx.fillStyle = "#64748b";
         ctx.beginPath();
         ctx.moveTo(0, -15);
@@ -264,7 +302,6 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
         ctx.lineTo(-15, 10);
         ctx.closePath();
         ctx.fill();
-        
         ctx.fillStyle = "#475569";
         ctx.beginPath();
         ctx.moveTo(0, -15);
@@ -272,32 +309,34 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
         ctx.lineTo(0, 8);
         ctx.closePath();
         ctx.fill();
-        
         ctx.restore();
 
-        // Collision detection
         if (
           obs.lane === snakeLane.current &&
           obs.y > groundY - 60 &&
           obs.y < groundY - 20 &&
           !isJumping.current
         ) {
+          if (shieldCharges > 0) {
+            setShieldCharges(shieldCharges - 1);
+            toast.success("🛡️ Angle Shield saved you!", { duration: 1200 });
+            return false;
+          }
           setGameActive(false);
           toast.error("Game Over! Hit an obstacle!");
-          const topicId = Math.floor(distance.current / 100) % educationalTopics.length + 1;
-          setTimeout(() => onGameOver(score, topicId), 1000);
+          const nextTopicId = Math.floor(distance.current / 100) % educationalTopics.length + 1;
+          setTimeout(() => onGameOver(score, nextTopicId), 1000);
         }
 
         return true;
       });
 
-      // Spawn new objects
       const now = Date.now();
-      if (now - lastSpawnInsect > 1500) {
+      if (now - lastSpawnInsect > (slowTime ? 2000 : 1500)) {
         spawnInsect();
         lastSpawnInsect = now;
       }
-      if (now - lastSpawnObstacle > 2500) {
+      if (now - lastSpawnObstacle > (slowTime ? 3000 : 2500)) {
         spawnObstacle();
         lastSpawnObstacle = now;
       }
@@ -306,7 +345,6 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
     };
     gameLoop();
 
-    // Controls
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft" && snakeLane.current > 0) {
         snakeLane.current--;
@@ -333,7 +371,6 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
       const deltaY = touch.clientY - touchStartY.current;
 
       if (Math.abs(deltaX) > Math.abs(deltaY)) {
-        // Horizontal swipe
         if (deltaX > 30 && snakeLane.current < LANES - 1) {
           snakeLane.current++;
           toast("▶️", { duration: 300 });
@@ -341,13 +378,10 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
           snakeLane.current--;
           toast("◀️", { duration: 300 });
         }
-      } else {
-        // Vertical swipe
-        if (deltaY < -30 && !isJumping.current) {
-          isJumping.current = true;
-          jumpVelocity.current = -15;
-          toast("⬆️ Jump!", { duration: 300 });
-        }
+      } else if (deltaY < -30 && !isJumping.current) {
+        isJumping.current = true;
+        jumpVelocity.current = -15;
+        toast("⬆️ Jump!", { duration: 300 });
       }
     };
 
@@ -362,7 +396,7 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
       canvas.removeEventListener("touchend", handleTouchEnd);
       cancelAnimationFrame(animationId);
     };
-  }, [gameActive, paused, onGameOver, score, hints]);
+  }, [gameActive, paused, slowTime, shieldCharges, doublePoints, hints, onGameOver, onEarnStars, score]);
 
   return (
     <div className="min-h-screen bg-background py-4 px-4">
@@ -389,9 +423,17 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
 
         <Card className="p-2 mb-3 bg-accent/5 border-accent/20">
           <p className="text-center text-xs text-foreground">
-            ⬅️ ➡️ Swipe to change lanes • ⬆️ Swipe up to jump • 🐛 Collect insects • 🪨 Avoid rocks
+            {simpleMode
+              ? "Swipe to move • Swipe up to jump • Bugs = points"
+              : "⬅️ ➡️ Swipe to change lanes • ⬆️ Swipe up to jump • 🐛 Collect insects • 🪨 Avoid rocks"}
           </p>
         </Card>
+
+        <div className="flex gap-2 mb-2 text-xs">
+          {doublePoints && <span className="px-2 py-1 rounded-full bg-amber-200 text-amber-800">📏 Length Boost active</span>}
+          {shieldCharges > 0 && <span className="px-2 py-1 rounded-full bg-sky-200 text-sky-900">🛡️ Shield x{shieldCharges}</span>}
+          {slowTime && <span className="px-2 py-1 rounded-full bg-indigo-200 text-indigo-900">❄️ Fraction Freeze</span>}
+        </div>
 
         <div className="flex justify-center relative">
           <HintCard hint={currentHint} visible={showHint} />
@@ -404,8 +446,8 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
 
         {paused && (
           <Card className="mt-4 p-6 text-center bg-primary/10 border-primary/20 animate-slide-up">
-            <h3 className="text-2xl font-bold text-foreground mb-2">⏸️ Paused</h3>
-            <p className="text-muted-foreground mb-4">Take a breather!</p>
+            <h3 className="text-2xl font-bold text-foreground mb-2">⏸️ {simpleMode ? "Break time" : "Paused"}</h3>
+            <p className="text-muted-foreground mb-4">{simpleMode ? "Tap play to keep running" : "Take a breather!"}</p>
             <Button onClick={() => setPaused(false)}>
               <Play className="mr-2 h-4 w-4" />
               Resume
@@ -414,7 +456,7 @@ export const EndlessRunner = ({ onGameOver, onHome, topicId }: EndlessRunnerProp
         )}
 
         <div className="mt-4 text-center text-xs text-muted-foreground">
-          Distance: {Math.floor(distance.current)}m
+          {simpleMode ? "Run" : "Distance"}: {Math.floor(distance.current)}m
         </div>
       </div>
     </div>
