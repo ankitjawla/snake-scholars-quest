@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Pause, Play, Home } from "lucide-react";
@@ -23,6 +23,14 @@ interface GameObject {
   x: number;
   y: number;
   lane: number;
+}
+
+interface Insect extends GameObject {
+  type: "normal" | "firefly" | "knowledge";
+}
+
+interface Obstacle extends GameObject {
+  wobble: number;
 }
 
 const LANES = 3;
@@ -55,32 +63,67 @@ export const EndlessRunner = ({
   const [doublePoints, setDoublePoints] = useState(false);
   const [shieldCharges, setShieldCharges] = useState(0);
   const [slowTime, setSlowTime] = useState(false);
+  const [combo, setCombo] = useState(0);
+  const [bestCombo, setBestCombo] = useState(0);
 
   const snakeLane = useRef(1); // 0, 1, or 2
   const snakeY = useRef(0);
   const isJumping = useRef(false);
   const jumpVelocity = useRef(0);
 
-  const insects = useRef<GameObject[]>([]);
-  const obstacles = useRef<GameObject[]>([]);
+  const insects = useRef<Insect[]>([]);
+  const obstacles = useRef<Obstacle[]>([]);
   const roadOffset = useRef(0);
   const distance = useRef(0);
   const lastHintScore = useRef(0);
+  const comboRef = useRef(0);
+  const bestComboRef = useRef(0);
+  const lastCatchTime = useRef<number | null>(null);
+  const starField = useRef<{ x: number; y: number; size: number; speed: number }[]>([]);
+  const scoreRef = useRef(0);
 
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
 
   // Generate hints based on selected topic
   const selectedTopic = topicId ? educationalTopics.find(t => t.id === topicId) : null;
-  const hints = selectedTopic ? [
-    `💡 ${selectedTopic.concept.slice(0, 80)}...`,
-    `📚 Fun Fact: ${selectedTopic.funFact.slice(0, 80)}...`,
-    `✨ Example: ${selectedTopic.example.slice(0, 80)}...`,
-  ] : [
-    "💡 Stay in your lane to avoid obstacles!",
-    "📚 Collect insects for bonus points!",
-    "✨ Jump to avoid rocks on the road!",
-  ];
+  const hints = useMemo(() => {
+    if (selectedTopic) {
+      return [
+        `💡 ${selectedTopic.concept.slice(0, 80)}...`,
+        `📚 Fun Fact: ${selectedTopic.funFact.slice(0, 80)}...`,
+        `✨ Example: ${selectedTopic.example.slice(0, 80)}...`,
+      ];
+    }
+    return [
+      "💡 Stay in your lane to avoid obstacles!",
+      "📚 Collect insects for bonus points!",
+      "✨ Jump to avoid rocks on the road!",
+    ];
+  }, [selectedTopic]);
+
+  useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
+
+  useEffect(() => {
+    if (!gameActive) {
+      comboRef.current = 0;
+      setCombo(0);
+    }
+  }, [gameActive]);
+
+  useEffect(() => {
+    if (!gameActive) return;
+    const timer = window.setInterval(() => {
+      if (paused) return;
+      if (comboRef.current > 0 && lastCatchTime.current && performance.now() - lastCatchTime.current > 3000) {
+        comboRef.current = 0;
+        setCombo(0);
+      }
+    }, 250);
+    return () => window.clearInterval(timer);
+  }, [gameActive, paused]);
 
   useEffect(() => {
     if (activePowerUps.includes("length-boost")) {
@@ -123,60 +166,123 @@ export const EndlessRunner = ({
         canvas.width = Math.min(container.clientWidth - 32, 400);
         canvas.height = Math.min(window.innerHeight * 0.65, 600);
       }
+      if (starField.current.length > 0) {
+        starField.current.forEach((star) => {
+          star.x = Math.random() * canvas.width;
+          star.y = Math.random() * canvas.height;
+        });
+      }
     };
     updateCanvasSize();
     window.addEventListener("resize", updateCanvasSize);
 
-    const centerX = canvas.width / 2;
-    const groundY = canvas.height - 80;
+    if (starField.current.length === 0) {
+      for (let i = 0; i < 40; i++) {
+        starField.current.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          size: Math.random() * 1.6 + 0.4,
+          speed: Math.random() * 0.6 + 0.2,
+        });
+      }
+    }
 
     const spawnInsect = () => {
       const lane = Math.floor(Math.random() * LANES);
+      const centerX = canvas.width / 2;
+      const spawnTypeRoll = Math.random();
+      let type: Insect["type"] = "normal";
+      if (spawnTypeRoll > 0.85) {
+        type = "knowledge";
+      } else if (spawnTypeRoll > 0.6) {
+        type = "firefly";
+      }
       insects.current.push({
         x: centerX + (lane - 1) * LANE_WIDTH,
         y: -50,
         lane,
+        type,
       });
     };
 
     const spawnObstacle = () => {
       const lane = Math.floor(Math.random() * LANES);
+      const centerX = canvas.width / 2;
       obstacles.current.push({
         x: centerX + (lane - 1) * LANE_WIDTH,
         y: -50,
         lane,
+        wobble: Math.random() * 0.4 + 0.2,
       });
     };
 
     for (let i = 0; i < 3; i++) {
-      setTimeout(spawnInsect, i * 1000);
+      window.setTimeout(spawnInsect, i * 800);
     }
-    setTimeout(spawnObstacle, 2000);
+    window.setTimeout(spawnObstacle, 1800);
 
-    let lastSpawnInsect = Date.now();
-    let lastSpawnObstacle = Date.now();
+    let lastSpawnInsect = performance.now();
+    let lastSpawnObstacle = performance.now();
     let animationId: number;
 
     const gameLoop = () => {
+      animationId = requestAnimationFrame(gameLoop);
       if (!gameActive || paused) {
-        animationId = requestAnimationFrame(gameLoop);
         return;
       }
 
+      const now = performance.now();
+      const centerX = canvas.width / 2;
+      const groundY = canvas.height - 80;
+      const difficulty = 1 + Math.min(distance.current / 600, 1.5);
+      const baseSpeed = GAME_SPEED * difficulty;
+      const currentSpeed = slowTime ? baseSpeed * 0.6 : baseSpeed;
+      const roadWidth = LANE_WIDTH * LANES + 80;
+      const roadLeft = centerX - roadWidth / 2;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const currentSpeed = slowTime ? GAME_SPEED * 0.5 : GAME_SPEED;
-
-      roadOffset.current += currentSpeed;
+      roadOffset.current += currentSpeed * 0.6;
       if (roadOffset.current > 40) roadOffset.current = 0;
 
-      const roadGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      roadGradient.addColorStop(0, "#1e293b");
-      roadGradient.addColorStop(1, "#0f172a");
-      ctx.fillStyle = roadGradient;
+      const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      skyGradient.addColorStop(0, "#0f172a");
+      skyGradient.addColorStop(1, "#020617");
+      ctx.fillStyle = skyGradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.strokeStyle = "#475569";
+      starField.current.forEach((star) => {
+        star.y += currentSpeed * 0.15 * star.speed;
+        if (star.y > canvas.height) {
+          star.y = -5;
+          star.x = Math.random() * canvas.width;
+        }
+        ctx.fillStyle = "rgba(226, 232, 240, 0.85)";
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(roadLeft, 0, roadWidth, canvas.height);
+      ctx.clip();
+
+      const roadGradient = ctx.createLinearGradient(roadLeft, 0, roadLeft, canvas.height);
+      roadGradient.addColorStop(0, "#1f2937");
+      roadGradient.addColorStop(1, "#0f172a");
+      ctx.fillStyle = roadGradient;
+      ctx.fillRect(roadLeft, 0, roadWidth, canvas.height);
+
+      for (let laneIndex = 0; laneIndex < LANES; laneIndex++) {
+        const laneCenter = centerX + (laneIndex - 1) * LANE_WIDTH;
+        const laneLeft = laneCenter - LANE_WIDTH / 2;
+        ctx.fillStyle =
+          laneIndex === snakeLane.current ? "rgba(56, 189, 248, 0.14)" : "rgba(148, 163, 184, 0.08)";
+        ctx.fillRect(laneLeft, 0, LANE_WIDTH, canvas.height);
+      }
+
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.45)";
       ctx.lineWidth = 3;
       ctx.setLineDash([20, 20]);
       for (let i = 0; i < LANES - 1; i++) {
@@ -187,15 +293,16 @@ export const EndlessRunner = ({
         ctx.stroke();
       }
       ctx.setLineDash([]);
+      ctx.restore();
 
       ctx.strokeStyle = "#22c55e";
       ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.moveTo(0, groundY);
-      ctx.lineTo(canvas.width, groundY);
+      ctx.moveTo(roadLeft, groundY);
+      ctx.lineTo(roadLeft + roadWidth, groundY);
       ctx.stroke();
 
-      distance.current += currentSpeed * 0.1;
+      distance.current += currentSpeed * 0.12;
 
       if (isJumping.current) {
         snakeY.current += jumpVelocity.current;
@@ -211,6 +318,11 @@ export const EndlessRunner = ({
       const snakeX = centerX + (snakeLane.current - 1) * LANE_WIDTH;
       const snakeDrawY = groundY - 40 + snakeY.current;
       const palette = skinStyles[skin] || skinStyles.classic;
+
+      ctx.fillStyle = "rgba(15, 23, 42, 0.45)";
+      ctx.beginPath();
+      ctx.ellipse(snakeX, groundY - 6, 24, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
 
       for (let i = 3; i >= 0; i--) {
         const segmentY = snakeDrawY + i * 8;
@@ -240,22 +352,63 @@ export const EndlessRunner = ({
         }
       }
 
+      const timeFactor = now / 240;
+
       insects.current = insects.current.filter((insect) => {
-        insect.y += currentSpeed;
+        const speedFactor = insect.type === "firefly" ? 1.15 : insect.type === "knowledge" ? 0.9 : 1;
+        insect.y += currentSpeed * speedFactor;
 
-        if (insect.y > canvas.height) return false;
+        if (insect.y > canvas.height + 20) {
+          if (comboRef.current > 0) {
+            comboRef.current = 0;
+            setCombo(0);
+          }
+          return false;
+        }
 
+        const bob = Math.sin(timeFactor + insect.y / 45) * 3;
         ctx.save();
-        ctx.translate(insect.x, insect.y);
-        ctx.fillStyle = "#ef4444";
-        ctx.beginPath();
-        ctx.arc(0, 0, 6, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "rgba(239, 68, 68, 0.4)";
-        ctx.beginPath();
-        ctx.ellipse(-5, 0, 6, 3, -Math.PI / 4, 0, Math.PI * 2);
-        ctx.ellipse(5, 0, 6, 3, Math.PI / 4, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.translate(insect.x + bob, insect.y);
+
+        if (insect.type === "firefly") {
+          const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, 14);
+          glow.addColorStop(0, "rgba(250, 204, 21, 0.9)");
+          glow.addColorStop(1, "rgba(250, 204, 21, 0)");
+          ctx.fillStyle = glow;
+          ctx.beginPath();
+          ctx.arc(0, 0, 14, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = "#facc15";
+          ctx.beginPath();
+          ctx.arc(0, 0, 6, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (insect.type === "knowledge") {
+          ctx.fillStyle = "#0ea5e9";
+          ctx.beginPath();
+          ctx.arc(0, 0, 8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#e0f2fe";
+          ctx.fillRect(-6, -4, 12, 8);
+          ctx.strokeStyle = "#0284c7";
+          ctx.lineWidth = 1;
+          ctx.strokeRect(-6, -4, 12, 8);
+          ctx.beginPath();
+          ctx.moveTo(-3, -1);
+          ctx.lineTo(0, 1);
+          ctx.lineTo(3, -1);
+          ctx.stroke();
+        } else {
+          ctx.fillStyle = "#ef4444";
+          ctx.beginPath();
+          ctx.arc(0, 0, 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "rgba(239, 68, 68, 0.4)";
+          ctx.beginPath();
+          ctx.ellipse(-5, 0, 6, 3, -Math.PI / 4, 0, Math.PI * 2);
+          ctx.ellipse(5, 0, 6, 3, Math.PI / 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
         ctx.restore();
 
         if (
@@ -264,24 +417,60 @@ export const EndlessRunner = ({
           insect.y < groundY - 20 &&
           !isJumping.current
         ) {
+          const nextCombo =
+            lastCatchTime.current && now - lastCatchTime.current < 2500
+              ? comboRef.current + 1
+              : 1;
+
+          comboRef.current = nextCombo;
+          setCombo(nextCombo);
+          lastCatchTime.current = now;
+
+          if (nextCombo > bestComboRef.current) {
+            bestComboRef.current = nextCombo;
+            setBestCombo(nextCombo);
+            toast.success(`🏆 Combo x${nextCombo}!`, { duration: 900 });
+          } else if (nextCombo > 1 && insect.type !== "knowledge") {
+            toast(`🔥 Combo x${nextCombo}`, { duration: 600 });
+          }
+
+          const basePoints = insect.type === "firefly" ? 20 : insect.type === "knowledge" ? 15 : 10;
+          const comboBonus = nextCombo > 1 ? nextCombo * 2 : 0;
+          const earned = (basePoints + comboBonus) * (doublePoints ? 2 : 1);
+          const projectedScore = scoreRef.current + earned;
+
           setScore((prev) => {
-            const earned = doublePoints ? 20 : 10;
             const newScore = prev + earned;
             if (newScore % 100 === 0) {
               toast.success(`🎉 ${newScore} points!`, { duration: 1000 });
             }
-            if (newScore - lastHintScore.current >= 50 && hints.length > 0) {
+            if (newScore - lastHintScore.current >= 50 && hints.length > 0 && insect.type !== "knowledge") {
               const randomHint = hints[Math.floor(Math.random() * hints.length)];
               setCurrentHint(randomHint);
               setShowHint(true);
               lastHintScore.current = newScore;
-              setTimeout(() => setShowHint(false), 4000);
+              window.setTimeout(() => setShowHint(false), 4000);
             }
             if (onEarnStars && newScore % 120 === 0) {
               onEarnStars(doublePoints ? 6 : 3);
             }
             return newScore;
           });
+
+          if (insect.type === "knowledge") {
+            if (hints.length > 0) {
+              const randomHint = hints[Math.floor(Math.random() * hints.length)];
+              setCurrentHint(`🧠 ${randomHint}`);
+              setShowHint(true);
+              lastHintScore.current = projectedScore;
+              window.setTimeout(() => setShowHint(false), 5000);
+            }
+            onEarnStars?.(2);
+            toast.info("🧠 Knowledge orb unlocked a hint!", { duration: 1200 });
+          } else if (insect.type === "firefly") {
+            onEarnStars?.(1);
+          }
+
           return false;
         }
 
@@ -289,24 +478,26 @@ export const EndlessRunner = ({
       });
 
       obstacles.current = obstacles.current.filter((obs) => {
-        obs.y += currentSpeed;
+        obs.y += currentSpeed * 1.05;
 
-        if (obs.y > canvas.height) return false;
+        if (obs.y > canvas.height + 30) return false;
+
+        const sway = Math.sin(timeFactor * obs.wobble + obs.y / 60) * 5;
 
         ctx.save();
-        ctx.translate(obs.x, obs.y);
+        ctx.translate(obs.x + sway, obs.y);
         ctx.fillStyle = "#64748b";
         ctx.beginPath();
-        ctx.moveTo(0, -15);
-        ctx.lineTo(15, 10);
-        ctx.lineTo(-15, 10);
+        ctx.moveTo(0, -16);
+        ctx.lineTo(18, 12);
+        ctx.lineTo(-18, 12);
         ctx.closePath();
         ctx.fill();
         ctx.fillStyle = "#475569";
         ctx.beginPath();
-        ctx.moveTo(0, -15);
-        ctx.lineTo(12, 5);
-        ctx.lineTo(0, 8);
+        ctx.moveTo(0, -16);
+        ctx.lineTo(14, 6);
+        ctx.lineTo(0, 10);
         ctx.closePath();
         ctx.fill();
         ctx.restore();
@@ -318,30 +509,32 @@ export const EndlessRunner = ({
           !isJumping.current
         ) {
           if (shieldCharges > 0) {
-            setShieldCharges(shieldCharges - 1);
+            setShieldCharges((prev) => prev - 1);
             toast.success("🛡️ Angle Shield saved you!", { duration: 1200 });
             return false;
           }
+          comboRef.current = 0;
+          setCombo(0);
           setGameActive(false);
           toast.error("Game Over! Hit an obstacle!");
           const nextTopicId = Math.floor(distance.current / 100) % educationalTopics.length + 1;
-          setTimeout(() => onGameOver(score, nextTopicId), 1000);
+          setTimeout(() => onGameOver(scoreRef.current, nextTopicId), 1000);
         }
 
         return true;
       });
 
-      const now = Date.now();
-      if (now - lastSpawnInsect > (slowTime ? 2000 : 1500)) {
+      const insectInterval = slowTime ? 2000 : Math.max(900, 1700 / difficulty);
+      const obstacleInterval = slowTime ? 3200 : Math.max(1500, 2600 / difficulty);
+
+      if (now - lastSpawnInsect > insectInterval) {
         spawnInsect();
         lastSpawnInsect = now;
       }
-      if (now - lastSpawnObstacle > (slowTime ? 3000 : 2500)) {
+      if (now - lastSpawnObstacle > obstacleInterval) {
         spawnObstacle();
         lastSpawnObstacle = now;
       }
-
-      animationId = requestAnimationFrame(gameLoop);
     };
     gameLoop();
 
@@ -396,7 +589,7 @@ export const EndlessRunner = ({
       canvas.removeEventListener("touchend", handleTouchEnd);
       cancelAnimationFrame(animationId);
     };
-  }, [gameActive, paused, slowTime, shieldCharges, doublePoints, hints, onGameOver, onEarnStars, score]);
+  }, [gameActive, paused, slowTime, shieldCharges, doublePoints, hints, onGameOver, onEarnStars, skin]);
 
   return (
     <div className="min-h-screen bg-background py-4 px-4">
@@ -424,8 +617,8 @@ export const EndlessRunner = ({
         <Card className="p-2 mb-3 bg-accent/5 border-accent/20">
           <p className="text-center text-xs text-foreground">
             {simpleMode
-              ? "Swipe to move • Swipe up to jump • Bugs = points"
-              : "⬅️ ➡️ Swipe to change lanes • ⬆️ Swipe up to jump • 🐛 Collect insects • 🪨 Avoid rocks"}
+              ? "Swipe to move • Swipe up to jump • Catch bugs quickly for combos"
+              : "⬅️ ➡️ Swipe to change lanes • ⬆️ Swipe up to jump • 🐛 Chain catches for combo multipliers • 🪨 Avoid rocks"}
           </p>
         </Card>
 
@@ -433,6 +626,8 @@ export const EndlessRunner = ({
           {doublePoints && <span className="px-2 py-1 rounded-full bg-amber-200 text-amber-800">📏 Length Boost active</span>}
           {shieldCharges > 0 && <span className="px-2 py-1 rounded-full bg-sky-200 text-sky-900">🛡️ Shield x{shieldCharges}</span>}
           {slowTime && <span className="px-2 py-1 rounded-full bg-indigo-200 text-indigo-900">❄️ Fraction Freeze</span>}
+          {combo > 1 && <span className="px-2 py-1 rounded-full bg-rose-200 text-rose-900">🔥 Combo x{combo}</span>}
+          {bestCombo > 1 && <span className="px-2 py-1 rounded-full bg-emerald-200 text-emerald-900">🏆 Best x{bestCombo}</span>}
         </div>
 
         <div className="flex justify-center relative">
