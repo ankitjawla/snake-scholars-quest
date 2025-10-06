@@ -336,7 +336,7 @@ export const recordChapterCompletion = (chapterId: string, topicId: number) => {
     newTier = 1;
   }
 
-  entry.badgeTier = Math.max(entry.badgeTier, newTier);
+  entry.badgeTier = Math.max(entry.badgeTier, newTier) as 0 | 1 | 2 | 3;
 
   saveProgress(progress);
   return progress.chapterProgress;
