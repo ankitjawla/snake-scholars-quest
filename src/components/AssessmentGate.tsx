@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { CheckCircle2, XCircle, Trophy, Zap, Volume2 } from "lucide-react";
 import { toast } from "sonner";
 import { logSession } from "@/utils/progressLogger";
+import type { PowerUpId } from "@/types/powerUps";
 
 interface AssessmentQuestion {
   question: string;
@@ -16,7 +17,7 @@ interface AssessmentGateProps {
   topicId: number;
   topicTitle: string;
   questions: AssessmentQuestion[];
-  onPass: (result: { correct: number; total: number; stars: number; powerUps: ("length-boost" | "angle-shield" | "fraction-freeze")[] }) => void;
+  onPass: (result: { correct: number; total: number; stars: number; powerUps: PowerUpId[] }) => void;
   onRetry: () => void;
   simpleMode: boolean;
   speechEnabled: boolean;
@@ -103,7 +104,7 @@ export const AssessmentGate = ({ topicId, topicTitle, questions, onPass, onRetry
   const passed = finalScore >= requiredCorrect;
 
   if (assessmentComplete) {
-    const earnedPowerUps: ("length-boost" | "angle-shield" | "fraction-freeze")[] = [];
+    const earnedPowerUps: PowerUpId[] = [];
     for (let i = 0; i < finalScore; i++) {
       const cycle = ["length-boost", "angle-shield", "fraction-freeze"] as const;
       earnedPowerUps.push(cycle[i % cycle.length]);

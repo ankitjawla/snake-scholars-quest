@@ -5,8 +5,7 @@ import { Pause, Play, Home } from "lucide-react";
 import { toast } from "sonner";
 import { educationalTopics } from "@/data/educationalContent";
 import { HintCard } from "./HintCard";
-
-type PowerUpId = "length-boost" | "angle-shield" | "fraction-freeze";
+import type { PowerUpId } from "@/types/powerUps";
 
 interface EndlessRunnerProps {
   onGameOver: (score: number, topicId: number) => void;

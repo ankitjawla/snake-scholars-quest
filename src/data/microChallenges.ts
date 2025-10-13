@@ -1,3 +1,5 @@
+import type { PowerUpId } from "@/types/powerUps";
+
 export interface MicroChallenge {
   id: string;
   topicIds: number[];
@@ -6,7 +8,7 @@ export interface MicroChallenge {
   correctAnswer: number;
   explanation: string;
   starReward: number;
-  powerUpReward: "length-boost" | "angle-shield" | "fraction-freeze" | null;
+  powerUpReward: PowerUpId | null;
   timeLimitSeconds: number;
   funTip: string;
 }
