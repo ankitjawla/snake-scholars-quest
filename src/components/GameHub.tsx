@@ -1,5 +1,15 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { Sparkles, Home, Rocket, Brain, BookOpenCheck } from "lucide-react";
+import {
+  Sparkles,
+  Home,
+  Rocket,
+  Brain,
+  BookOpenCheck,
+  Crown,
+  Puzzle,
+  Footprints,
+  Gamepad2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +32,52 @@ interface GameHubProps {
 }
 
 type GameId = "runner" | "math-blitz" | "word-garden";
+
+const gamingHighlights: Array<{
+  id: string;
+  title: string;
+  tagline: string;
+  description: string;
+  genre: string;
+  icon: ReactNode;
+}> = [
+  {
+    id: "chess-club",
+    title: "Chess Masters Arena",
+    tagline: "Plan, predict, and protect your king to win the crown.",
+    description:
+      "Sharpen strategic thinking with story-driven tournaments, classic puzzles, and endgame studies that level up with you.",
+    genre: "Strategy",
+    icon: <Crown className="h-5 w-5" />,
+  },
+  {
+    id: "scrabble-sprint",
+    title: "Scrabble Sprint League",
+    tagline: "Craft powerhouse words before the timer runs out.",
+    description:
+      "Mix vocabulary drills with multiplayer-style tile racks. Earn combo boosts for science terms and academic vocabulary.",
+    genre: "Word Builder",
+    icon: <Puzzle className="h-5 w-5" />,
+  },
+  {
+    id: "temple-trail",
+    title: "Temple Trail Dash",
+    tagline: "Dash, dodge, and dive through ancient ruins.",
+    description:
+      "An action runner inspired by Temple Run that swaps in math-powered relics and geography trivia checkpoints as you sprint.",
+    genre: "Action Runner",
+    icon: <Footprints className="h-5 w-5" />,
+  },
+  {
+    id: "arcade-allstars",
+    title: "Arcade All-Stars Zone",
+    tagline: "Quick hits of classic fun between study sessions.",
+    description:
+      "Rotate through retro-inspired mini-games like brick breakers, rhythm taps, and memory flips designed for five-minute brain breaks.",
+    genre: "Casual Mix",
+    icon: <Gamepad2 className="h-5 w-5" />,
+  },
+];
 
 const gameConfigs: Record<
   GameId,
@@ -172,6 +228,42 @@ export const GameHub = ({
               onComplete={handleSkillGameComplete}
             />
           )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-2 border-purple-200 bg-gradient-to-br from-white via-purple-50/60 to-white shadow-lg">
+        <CardHeader className="flex flex-col gap-2">
+          <CardTitle className="flex items-center gap-2 text-xl font-semibold text-purple-800">
+            <Sparkles className="h-5 w-5" /> Gamer's Showcase Corner
+          </CardTitle>
+          <CardDescription className="text-sm text-purple-700">
+            Peek at the bigger adventures arriving soon. These legendary titles blend classroom superpowers with fan-favorite
+            games like chess, Scrabble, Temple Run, and more.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            {gamingHighlights.map(highlight => (
+              <div
+                key={highlight.id}
+                className="flex h-full flex-col gap-3 rounded-xl border border-purple-200/70 bg-white/80 p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 text-purple-700">
+                    {highlight.icon}
+                  </span>
+                  <div>
+                    <h3 className="text-base font-semibold text-purple-900">{highlight.title}</h3>
+                    <p className="text-sm text-purple-700/80">{highlight.tagline}</p>
+                  </div>
+                </div>
+                <p className="flex-1 text-sm text-purple-700/90">{highlight.description}</p>
+                <Badge variant="secondary" className="w-fit bg-purple-100 text-purple-700">
+                  {highlight.genre}
+                </Badge>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
     </div>
