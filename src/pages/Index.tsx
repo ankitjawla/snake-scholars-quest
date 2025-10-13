@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { StartScreen } from "@/components/StartScreen";
-import { EndlessRunner } from "@/components/EndlessRunner";
+import { GameHub } from "@/components/GameHub";
 import { TopicReveal } from "@/components/TopicReveal";
 import { TopicsLibrary } from "@/components/TopicsLibrary";
 import { FoundersStory } from "@/components/FoundersStory";
@@ -47,8 +47,7 @@ import { getChallengeForTopic, type MicroChallenge } from "@/data/microChallenge
 import { ChallengeArena } from "@/components/ChallengeArena";
 import { ChallengeSummary } from "@/components/ChallengeSummary";
 import type { ChallengeResult } from "@/types/challenge";
-
-type PowerUpId = "length-boost" | "angle-shield" | "fraction-freeze";
+import type { PowerUpId } from "@/types/powerUps";
 
 type Screen =
   | "start"
@@ -441,7 +440,7 @@ export default function Index() {
         />
       )}
       {screen === "game" && (
-        <EndlessRunner
+        <GameHub
           onGameOver={handleGameOver}
           onHome={handleBackToStart}
           topicId={selectedTopicId || undefined}

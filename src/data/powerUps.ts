@@ -1,5 +1,7 @@
+import type { PowerUpId } from "@/types/powerUps";
+
 export interface PowerUpDefinition {
-  id: "length-boost" | "angle-shield" | "fraction-freeze";
+  id: PowerUpId;
   name: string;
   description: string;
   effect: string;
