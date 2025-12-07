@@ -1,4 +1,5 @@
 import { getStoredProgress, saveProgress } from "./progressStorage";
+import type { UserProgress } from "@/types/userProgress";
 
 export interface SessionLog {
   timestamp: Date;
@@ -11,22 +12,26 @@ export interface SessionLog {
   totalQuestions?: number;
 }
 
+interface ExtendedUserProgress extends UserProgress {
+  sessionLogs?: SessionLog[];
+}
+
 export const logSession = (log: Omit<SessionLog, "timestamp">) => {
-  const progress = getStoredProgress();
+  const progress = getStoredProgress() as ExtendedUserProgress;
   const sessionLog: SessionLog = {
     ...log,
     timestamp: new Date(),
   };
 
   // Store in session logs (we can add this to UserProgress interface later)
-  if (!(progress as any).sessionLogs) {
-    (progress as any).sessionLogs = [];
+  if (!progress.sessionLogs) {
+    progress.sessionLogs = [];
   }
-  (progress as any).sessionLogs.push(sessionLog);
+  progress.sessionLogs.push(sessionLog);
 
   // Keep only last 100 sessions to avoid localStorage bloat
-  if ((progress as any).sessionLogs.length > 100) {
-    (progress as any).sessionLogs = (progress as any).sessionLogs.slice(-100);
+  if (progress.sessionLogs.length > 100) {
+    progress.sessionLogs = progress.sessionLogs.slice(-100);
   }
 
   saveProgress(progress);
@@ -36,8 +41,8 @@ export const logSession = (log: Omit<SessionLog, "timestamp">) => {
 };
 
 export const getSessionStats = () => {
-  const progress = getStoredProgress();
-  const logs: SessionLog[] = (progress as any).sessionLogs || [];
+  const progress = getStoredProgress() as ExtendedUserProgress;
+  const logs: SessionLog[] = progress.sessionLogs || [];
 
   return {
     totalSessions: logs.length,

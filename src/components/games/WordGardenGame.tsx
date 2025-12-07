@@ -6,9 +6,12 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
 interface WordGardenGameProps {
-  simpleMode: boolean;
+  simpleMode?: boolean;
   topicName?: string;
-  onComplete: (result: { score: number; stars: number; correct: number; total: number; message: string }) => void;
+  onComplete?: (result: { score: number; stars: number; correct: number; total: number; message: string }) => void;
+  onGameOver?: (score: number) => void;
+  onBack?: () => void;
+  highScore?: number;
 }
 
 interface WordChallenge {
@@ -96,7 +99,7 @@ const scrambleWord = (word: string) => {
   return scrambled.toUpperCase();
 };
 
-export const WordGardenGame = ({ onComplete, simpleMode, topicName }: WordGardenGameProps) => {
+export const WordGardenGame = ({ onComplete, onGameOver, onBack, simpleMode = false, topicName, highScore }: WordGardenGameProps) => {
   const totalRounds = simpleMode ? 4 : 6;
   const availableChallenges = useMemo(() => shuffleArray(challenges).slice(0, totalRounds), [totalRounds]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -132,7 +135,7 @@ export const WordGardenGame = ({ onComplete, simpleMode, topicName }: WordGarden
             ? "Vocabulary garden blooming nicely!"
             : "Keep exploring—revisit the clues to earn more stars.";
 
-      onComplete({
+      const result = {
         score,
         stars,
         correct: correctCount,
@@ -140,7 +143,14 @@ export const WordGardenGame = ({ onComplete, simpleMode, topicName }: WordGarden
         message: topicName
           ? `${topicName} vocabulary boost: ${correctCount} / ${availableChallenges.length} mastered`
           : `You matched ${correctCount} of ${availableChallenges.length} brilliant words!`,
-      });
+      };
+
+      if (onComplete) {
+        onComplete(result);
+      }
+      if (onGameOver) {
+        onGameOver(score);
+      }
       return;
     }
 
@@ -150,8 +160,19 @@ export const WordGardenGame = ({ onComplete, simpleMode, topicName }: WordGarden
   };
 
   return (
-    <Card className="border-2 border-sky-200 bg-sky-50 shadow-lg">
-      <CardHeader className="flex flex-col gap-2">
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-50 p-4">
+      {onBack && (
+        <div className="max-w-2xl mx-auto mb-4">
+          <Button onClick={onBack} variant="outline" className="mb-2">
+            ← Back to Games
+          </Button>
+          {highScore !== undefined && (
+            <p className="text-sm text-sky-700">High Score: {highScore}</p>
+          )}
+        </div>
+      )}
+      <Card className="border-2 border-sky-200 bg-sky-50 shadow-lg max-w-2xl mx-auto">
+        <CardHeader className="flex flex-col gap-2">
         <CardTitle className="flex items-center gap-2 text-2xl font-bold text-sky-700">
           <BookOpen className="h-6 w-6" /> Wonder Word Garden
         </CardTitle>
@@ -215,5 +236,6 @@ export const WordGardenGame = ({ onComplete, simpleMode, topicName }: WordGarden
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 };

@@ -1,7 +1,7 @@
 import type { UserProgress } from "@/types/userProgress";
 
 class LocalStorageCache {
-  private cache: Map<string, any> = new Map();
+  private cache: Map<string, unknown> = new Map();
   private readonly MAX_CACHE_AGE = 5000; // 5 seconds
   private cacheTimestamps: Map<string, number> = new Map();
 
@@ -35,7 +35,7 @@ export const storageCache = new LocalStorageCache();
 let saveTimeout: NodeJS.Timeout | null = null;
 const SAVE_DEBOUNCE_MS = 500;
 
-export const debouncedSave = (key: string, data: any, immediate = false) => {
+export const debouncedSave = (key: string, data: unknown, immediate = false) => {
   if (immediate) {
     if (saveTimeout) clearTimeout(saveTimeout);
     localStorage.setItem(key, JSON.stringify(data));

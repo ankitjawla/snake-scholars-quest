@@ -103,11 +103,11 @@ export const getStoredProgress = (): UserProgress => {
   try {
     const parsed = JSON.parse(stored);
 
-    parsed.lessonsViewed = (parsed.lessonsViewed || []).map((item: any) => ({
+    parsed.lessonsViewed = (parsed.lessonsViewed || []).map((item: { timestamp: string | Date; [key: string]: unknown }) => ({
       ...item,
       timestamp: new Date(item.timestamp),
     }));
-    parsed.nextReviewDate = (parsed.nextReviewDate || []).map((item: any) => ({
+    parsed.nextReviewDate = (parsed.nextReviewDate || []).map((item: { date: string | Date; topicId: number }) => ({
       ...item,
       date: new Date(item.date),
     }));

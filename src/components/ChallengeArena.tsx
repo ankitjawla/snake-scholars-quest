@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -142,14 +142,14 @@ export const ChallengeArena = ({ onExit, onComplete, simpleMode, speechEnabled }
     return () => {
       window.clearInterval(timer);
     };
-  }, [answered, currentQuestionIndex]);
+  }, [answered, currentQuestionIndex, handleTimeout]);
 
   const handleOptionSelect = (index: number) => {
     if (answered) return;
     setSelectedOption(index);
   };
 
-  const gradeQuestion = (selected: number | null, timedOutAnswer = false) => {
+  const gradeQuestion = useCallback((selected: number | null, timedOutAnswer = false) => {
     if (answered) return;
 
     const elapsedSeconds = Math.max(1, Math.min(QUESTION_TIME_LIMIT, Math.floor((Date.now() - questionStartTime) / 1000)));
@@ -183,17 +183,17 @@ export const ChallengeArena = ({ onExit, onComplete, simpleMode, speechEnabled }
 
     setAnswered(true);
     setTimedOut(timedOutAnswer);
-  };
+  }, [answered, questionStartTime, currentQuestion.correctAnswer, answers, currentQuestionIndex, times, currentStreak, bestStreak, simpleMode, questions.length]);
 
   const handleSubmit = () => {
     if (selectedOption === null || answered) return;
     gradeQuestion(selectedOption, false);
   };
 
-  const handleTimeout = () => {
+  const handleTimeout = useCallback(() => {
     if (answered) return;
     gradeQuestion(null, true);
-  };
+  }, [answered, gradeQuestion]);
 
   const handleNext = () => {
     if (!answered) return;

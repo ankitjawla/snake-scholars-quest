@@ -6,9 +6,12 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
 interface MathBlitzGameProps {
-  simpleMode: boolean;
+  simpleMode?: boolean;
   topicName?: string;
-  onComplete: (result: { score: number; stars: number; correct: number; total: number; message: string }) => void;
+  onComplete?: (result: { score: number; stars: number; correct: number; total: number; message: string }) => void;
+  onGameOver?: (score: number) => void;
+  onBack?: () => void;
+  highScore?: number;
 }
 
 interface MathQuestion {
@@ -108,9 +111,9 @@ const calculateStars = (correct: number, total: number) => {
   return 1;
 };
 
-export const MathBlitzGame = ({ onComplete, simpleMode, topicName }: MathBlitzGameProps) => {
+export const MathBlitzGame = ({ onComplete, onGameOver, onBack, simpleMode = false, topicName, highScore }: MathBlitzGameProps) => {
   const totalQuestions = simpleMode ? 5 : 8;
-  const questions = useMemo(() => Array.from({ length: totalQuestions }, () => buildQuestion(simpleMode)), [simpleMode, totalQuestions]);
+  const questions = useMemo(() => Array.from({ length: totalQuestions }, () => buildQuestion(simpleMode)), [simpleMode]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
@@ -145,7 +148,7 @@ export const MathBlitzGame = ({ onComplete, simpleMode, topicName }: MathBlitzGa
             ? "Fantastic focus—keep that math streak going!"
             : "Great effort! Review the hint and try again for more stars.";
 
-      onComplete({
+      const result = {
         score,
         stars,
         correct: correctCount,
@@ -153,7 +156,14 @@ export const MathBlitzGame = ({ onComplete, simpleMode, topicName }: MathBlitzGa
         message: topicName
           ? `${topicName} mastery boost: ${correctCount} / ${questions.length} correct!`
           : `You solved ${correctCount} of ${questions.length} math meteors!`,
-      });
+      };
+
+      if (onComplete) {
+        onComplete(result);
+      }
+      if (onGameOver) {
+        onGameOver(score);
+      }
       return;
     }
 
@@ -163,8 +173,19 @@ export const MathBlitzGame = ({ onComplete, simpleMode, topicName }: MathBlitzGa
   };
 
   return (
-    <Card className="border-2 border-amber-200 bg-amber-50 shadow-lg">
-      <CardHeader className="flex flex-col gap-2">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 p-4">
+      {onBack && (
+        <div className="max-w-2xl mx-auto mb-4">
+          <Button onClick={onBack} variant="outline" className="mb-2">
+            ← Back to Games
+          </Button>
+          {highScore !== undefined && (
+            <p className="text-sm text-amber-700">High Score: {highScore}</p>
+          )}
+        </div>
+      )}
+      <Card className="border-2 border-amber-200 bg-amber-50 shadow-lg max-w-2xl mx-auto">
+        <CardHeader className="flex flex-col gap-2">
         <CardTitle className="flex items-center gap-2 text-2xl font-bold text-amber-700">
           <Calculator className="h-6 w-6" /> Math Meteor Mission
         </CardTitle>
@@ -227,5 +248,6 @@ export const MathBlitzGame = ({ onComplete, simpleMode, topicName }: MathBlitzGa
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 };
