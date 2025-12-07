@@ -1,5 +1,5 @@
-import { useMemo, useState, useEffect, useCallback, useRef } from "react";
-import { Calculator, Lightbulb, Timer, Zap, Trophy, Star } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Calculator, Lightbulb, Timer, Zap, Trophy, Star, Sparkles, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -21,9 +21,8 @@ interface MathQuestion {
   explanation: string;
   hint: string;
   type: string;
+  difficulty: number;
 }
-
-const operations = ["+", "-", "×", "÷"] as const;
 
 const shuffleArray = <T,>(items: T[]) => {
   const copy = [...items];
@@ -34,247 +33,323 @@ const shuffleArray = <T,>(items: T[]) => {
   return copy;
 };
 
-// Build basic arithmetic questions
-const buildBasicQuestion = (simpleMode: boolean): MathQuestion => {
-  const allowedOperations = simpleMode ? operations.slice(0, 2) : operations;
-  const operation = allowedOperations[Math.floor(Math.random() * allowedOperations.length)];
-  let a = 0;
-  let b = 0;
-  let answer = 0;
-  let explanation = "";
-
-  switch (operation) {
-    case "+": {
-      a = Math.floor(Math.random() * 30) + 5;
-      b = Math.floor(Math.random() * 20) + 3;
-      answer = a + b;
-      explanation = `${a} + ${b} = ${answer}. Add the ones first, then the tens!`;
-      break;
-    }
-    case "-": {
-      a = Math.floor(Math.random() * 40) + 15;
-      b = Math.floor(Math.random() * (a - 5)) + 5;
-      answer = a - b;
-      explanation = `${a} - ${b} = ${answer}. Think about taking ${b} away from ${a}.`;
-      break;
-    }
-    case "×": {
-      a = Math.floor(Math.random() * 10) + 2;
-      b = Math.floor(Math.random() * 8) + 2;
-      answer = a * b;
-      explanation = `${a} groups of ${b} make ${answer}. Multiplication is repeated addition!`;
-      break;
-    }
-    case "÷": {
-      b = Math.floor(Math.random() * 8) + 2;
-      answer = Math.floor(Math.random() * 8) + 2;
-      a = b * answer;
-      explanation = `${a} ÷ ${b} = ${answer}. Division shares ${a} into ${b} equal groups.`;
-      break;
-    }
-    default:
-      break;
-  }
-
-  const hint =
-    operation === "×"
-      ? `Try skip-counting by ${a}.`
-      : operation === "÷"
-        ? `Think: ${a} split into ${b} equal groups.`
-        : operation === "+"
-          ? `Add the ones, then the tens.`
-          : `Count back by ${b} from ${a}.`;
-
-  return {
-    prompt: `${a} ${operation} ${b} = ?`,
-    answer,
-    options: generateOptions(answer),
-    explanation,
-    hint,
-    type: "basic",
-  };
-};
-
-// Build tricky questions
-const buildTrickyQuestion = (): MathQuestion => {
-  const trickyTypes = [
-    () => {
-      // Missing number puzzle: ? + 15 = 23
-      const answer = Math.floor(Math.random() * 20) + 5;
-      const b = Math.floor(Math.random() * 15) + 10;
-      const sum = answer + b;
-      return {
-        prompt: `? + ${b} = ${sum}`,
-        answer,
-        explanation: `The missing number is ${answer} because ${answer} + ${b} = ${sum}. Work backwards!`,
-        hint: "Work backwards: subtract to find the missing number.",
-      };
-    },
-    () => {
-      // Order of operations: 2 + 3 × 4
-      const a = Math.floor(Math.random() * 5) + 2;
-      const b = Math.floor(Math.random() * 5) + 2;
-      const c = Math.floor(Math.random() * 5) + 2;
-      const answer = a + b * c;
-      return {
-        prompt: `${a} + ${b} × ${c} = ?`,
-        answer,
-        explanation: `First multiply: ${b} × ${c} = ${b * c}, then add: ${a} + ${b * c} = ${answer}. Always multiply before adding!`,
-        hint: "Remember: multiply first, then add!",
-      };
-    },
-    () => {
-      // Double operations: (10 + 5) × 2
-      const a = Math.floor(Math.random() * 10) + 5;
-      const b = Math.floor(Math.random() * 5) + 2;
-      const c = Math.floor(Math.random() * 3) + 2;
-      const answer = (a + b) * c;
-      return {
-        prompt: `(${a} + ${b}) × ${c} = ?`,
-        answer,
-        explanation: `First add inside parentheses: ${a} + ${b} = ${a + b}, then multiply: ${a + b} × ${c} = ${answer}.`,
-        hint: "Do what's inside parentheses first!",
-      };
-    },
-    () => {
-      // What number comes next: 5, 10, 15, ?
-      const start = Math.floor(Math.random() * 5) + 2;
-      const step = Math.floor(Math.random() * 5) + 2;
-      const answer = start + step * 3;
-      return {
-        prompt: `${start}, ${start + step}, ${start + step * 2}, ?`,
-        answer,
-        explanation: `The pattern adds ${step} each time. ${start + step * 2} + ${step} = ${answer}.`,
-        hint: "Look for the pattern - what number is being added each time?",
-      };
-    },
-    () => {
-      // Reverse subtraction: ? - 8 = 12
-      const answer = Math.floor(Math.random() * 20) + 15;
-      const b = Math.floor(Math.random() * 10) + 5;
-      const result = answer - b;
-      return {
-        prompt: `? - ${b} = ${result}`,
-        answer,
-        explanation: `The missing number is ${answer} because ${answer} - ${b} = ${result}. Add to find it!`,
-        hint: "Add the two numbers to find the missing number.",
-      };
-    },
-    () => {
-      // Division with remainder concept: How many groups?
-      const total = Math.floor(Math.random() * 30) + 20;
-      const groupSize = Math.floor(Math.random() * 5) + 3;
-      const answer = Math.floor(total / groupSize);
-      return {
-        prompt: `If you have ${total} items and make groups of ${groupSize}, how many complete groups?`,
-        answer,
-        explanation: `${total} ÷ ${groupSize} = ${answer} complete groups (with some left over).`,
-        hint: "Divide to find how many groups you can make.",
-      };
-    },
-    () => {
-      // Comparison: Which is bigger?
-      const a = Math.floor(Math.random() * 50) + 10;
-      const b = Math.floor(Math.random() * 50) + 10;
-      const answer = Math.max(a, b);
-      return {
-        prompt: `Which is bigger: ${a} or ${b}?`,
-        answer,
-        explanation: `${answer} is bigger. ${answer === a ? `${a} > ${b}` : `${b} > ${a}`}`,
-        hint: "Compare the numbers - which one has more value?",
-      };
-    },
-    () => {
-      // Sum of two numbers: What's the total?
-      const a = Math.floor(Math.random() * 30) + 10;
-      const b = Math.floor(Math.random() * 30) + 10;
-      const answer = a + b;
-      return {
-        prompt: `Sarah has ${a} apples. Tom has ${b} apples. How many total?`,
-        answer,
-        explanation: `${a} + ${b} = ${answer} total apples.`,
-        hint: "Add both amounts together.",
-      };
-    },
-    () => {
-      // Difference: How many more?
-      const a = Math.floor(Math.random() * 30) + 20;
-      const b = Math.floor(Math.random() * 20) + 5;
-      const answer = a - b;
-      return {
-        prompt: `Emma has ${a} stickers. Jake has ${b}. How many more does Emma have?`,
-        answer,
-        explanation: `${a} - ${b} = ${answer}. Emma has ${answer} more stickers.`,
-        hint: "Subtract to find the difference.",
-      };
-    },
-    () => {
-      // Multiplication word problem
-      const groups = Math.floor(Math.random() * 5) + 2;
-      const perGroup = Math.floor(Math.random() * 8) + 3;
-      const answer = groups * perGroup;
-      return {
-        prompt: `${groups} boxes, ${perGroup} toys each. How many total toys?`,
-        answer,
-        explanation: `${groups} × ${perGroup} = ${answer} total toys.`,
-        hint: "Multiply groups by items per group.",
-      };
-    },
-  ];
-
-  const selectedType = trickyTypes[Math.floor(Math.random() * trickyTypes.length)];
-  const question = selectedType();
-  
-  return {
-    ...question,
-    options: generateOptions(question.answer),
-    type: "tricky",
-  };
-};
-
 // Generate smart distractors
-const generateOptions = (correctAnswer: number): number[] => {
+const generateOptions = (correctAnswer: number, difficulty: number = 1): number[] => {
   const distractors = new Set<number>();
+  const range = Math.max(1, Math.floor(correctAnswer * (0.1 + difficulty * 0.1)));
   
-  // Add some common mistake answers
-  if (correctAnswer > 10) {
-    distractors.add(correctAnswer - 1);
-    distractors.add(correctAnswer + 1);
-  }
+  // Add nearby numbers
+  distractors.add(correctAnswer - 1);
+  distractors.add(correctAnswer + 1);
   if (correctAnswer > 5) {
     distractors.add(correctAnswer - 5);
     distractors.add(correctAnswer + 5);
   }
+  if (correctAnswer > 10) {
+    distractors.add(correctAnswer - 10);
+    distractors.add(correctAnswer + 10);
+  }
   
-  // Add random nearby numbers
-  while (distractors.size < 3) {
-    const wiggle = Math.max(1, Math.round(correctAnswer * 0.15));
+  // Add random distractors
+  while (distractors.size < 6) {
+    const wiggle = Math.max(1, Math.round(correctAnswer * (0.1 + difficulty * 0.15)));
     const choice = correctAnswer + Math.floor(Math.random() * wiggle * 2) - wiggle;
     if (choice !== correctAnswer && choice > 0 && !distractors.has(choice)) {
       distractors.add(choice);
     }
   }
 
-  return shuffleArray([correctAnswer, ...Array.from(distractors)]);
+  return shuffleArray([correctAnswer, ...Array.from(distractors).slice(0, 3)]);
 };
 
-// Build question with variety
-const buildQuestion = (simpleMode: boolean, questionNumber: number): MathQuestion => {
-  // Mix of basic and tricky questions
-  // First 2-3 are basic, then mix in tricky ones
-  if (simpleMode) {
-    // Simple mode: mostly basic with occasional easy tricky
-    if (questionNumber <= 2 || Math.random() < 0.7) {
-      return buildBasicQuestion(simpleMode);
-    }
-    return buildTrickyQuestion();
-  } else {
-    // Normal mode: mix of basic and tricky
-    if (questionNumber <= 2 || Math.random() < 0.5) {
-      return buildBasicQuestion(simpleMode);
-    }
-    return buildTrickyQuestion();
-  }
+// Random puzzle generators - 20+ different types
+const puzzleGenerators = [
+  // Basic arithmetic
+  (level: number) => {
+    const max = 20 + level * 10;
+    const a = Math.floor(Math.random() * max) + 5;
+    const b = Math.floor(Math.random() * max) + 3;
+    const answer = a + b;
+    return {
+      prompt: `${a} + ${b} = ?`,
+      answer,
+      explanation: `${a} + ${b} = ${answer}. Great addition!`,
+      hint: "Add the numbers together!",
+      type: "addition",
+    };
+  },
+  (level: number) => {
+    const max = 30 + level * 10;
+    const a = Math.floor(Math.random() * max) + 15;
+    const b = Math.floor(Math.random() * (a - 5)) + 5;
+    const answer = a - b;
+    return {
+      prompt: `${a} - ${b} = ?`,
+      answer,
+      explanation: `${a} - ${b} = ${answer}. Subtraction!`,
+      hint: "Take away the smaller number!",
+      type: "subtraction",
+    };
+  },
+  (level: number) => {
+    const max = 8 + level;
+    const a = Math.floor(Math.random() * max) + 2;
+    const b = Math.floor(Math.random() * max) + 2;
+    const answer = a * b;
+    return {
+      prompt: `${a} × ${b} = ?`,
+      answer,
+      explanation: `${a} × ${b} = ${answer}. Multiplication!`,
+      hint: "Skip count or add repeatedly!",
+      type: "multiplication",
+    };
+  },
+  (level: number) => {
+    const b = Math.floor(Math.random() * (8 + level)) + 2;
+    const answer = Math.floor(Math.random() * (8 + level)) + 2;
+    const a = b * answer;
+    return {
+      prompt: `${a} ÷ ${b} = ?`,
+      answer,
+      explanation: `${a} ÷ ${b} = ${answer}. Division!`,
+      hint: "How many groups of " + b + "?",
+      type: "division",
+    };
+  },
+  
+  // Missing number puzzles
+  (level: number) => {
+    const max = 20 + level * 10;
+    const answer = Math.floor(Math.random() * max) + 5;
+    const b = Math.floor(Math.random() * 15) + 10;
+    const sum = answer + b;
+    return {
+      prompt: `? + ${b} = ${sum}`,
+      answer,
+      explanation: `The missing number is ${answer} because ${answer} + ${b} = ${sum}!`,
+      hint: "Work backwards - subtract!",
+      type: "missing_add",
+    };
+  },
+  (level: number) => {
+    const max = 30 + level * 10;
+    const answer = Math.floor(Math.random() * max) + 15;
+    const b = Math.floor(Math.random() * 10) + 5;
+    const result = answer - b;
+    return {
+      prompt: `? - ${b} = ${result}`,
+      answer,
+      explanation: `The missing number is ${answer} because ${answer} - ${b} = ${result}!`,
+      hint: "Add the two numbers!",
+      type: "missing_sub",
+    };
+  },
+  
+  // Order of operations
+  (level: number) => {
+    const a = Math.floor(Math.random() * 5) + 2;
+    const b = Math.floor(Math.random() * 5) + 2;
+    const c = Math.floor(Math.random() * 5) + 2;
+    const answer = a + b * c;
+    return {
+      prompt: `${a} + ${b} × ${c} = ?`,
+      answer,
+      explanation: `Multiply first: ${b} × ${c} = ${b * c}, then add: ${a} + ${b * c} = ${answer}!`,
+      hint: "Multiply before adding!",
+      type: "order_ops",
+    };
+  },
+  (level: number) => {
+    const a = Math.floor(Math.random() * 5) + 2;
+    const b = Math.floor(Math.random() * 5) + 2;
+    const c = Math.floor(Math.random() * 5) + 2;
+    const answer = (a + b) * c;
+    return {
+      prompt: `(${a} + ${b}) × ${c} = ?`,
+      answer,
+      explanation: `Add first: ${a} + ${b} = ${a + b}, then multiply: ${a + b} × ${c} = ${answer}!`,
+      hint: "Do parentheses first!",
+      type: "parentheses",
+    };
+  },
+  
+  // Pattern recognition
+  (level: number) => {
+    const start = Math.floor(Math.random() * 5) + 2;
+    const step = Math.floor(Math.random() * 5) + 2;
+    const answer = start + step * 3;
+    return {
+      prompt: `${start}, ${start + step}, ${start + step * 2}, ?`,
+      answer,
+      explanation: `The pattern adds ${step} each time. ${start + step * 2} + ${step} = ${answer}!`,
+      hint: "Find the pattern - what's being added?",
+      type: "pattern",
+    };
+  },
+  (level: number) => {
+    const start = Math.floor(Math.random() * 10) + 5;
+    const step = Math.floor(Math.random() * 3) + 2;
+    const answer = start * (step * step);
+    return {
+      prompt: `${start}, ${start * step}, ${start * step * step}, ?`,
+      answer,
+      explanation: `The pattern multiplies by ${step} each time. ${start * step * step} × ${step} = ${answer}!`,
+      hint: "What number is being multiplied?",
+      type: "pattern_mult",
+    };
+  },
+  
+  // Word problems
+  (level: number) => {
+    const a = Math.floor(Math.random() * 30) + 10;
+    const b = Math.floor(Math.random() * 30) + 10;
+    const answer = a + b;
+    const items = ["apples", "toys", "candies", "books", "stickers"][Math.floor(Math.random() * 5)];
+    return {
+      prompt: `Sarah has ${a} ${items}. Tom has ${b} ${items}. How many total?`,
+      answer,
+      explanation: `${a} + ${b} = ${answer} total ${items}!`,
+      hint: "Add both amounts!",
+      type: "word_add",
+    };
+  },
+  (level: number) => {
+    const a = Math.floor(Math.random() * 30) + 20;
+    const b = Math.floor(Math.random() * 20) + 5;
+    const answer = a - b;
+    const names = [["Emma", "Jake"], ["Lily", "Max"], ["Sophia", "Alex"]][Math.floor(Math.random() * 3)];
+    const items = ["stickers", "marbles", "cards"][Math.floor(Math.random() * 3)];
+    return {
+      prompt: `${names[0]} has ${a} ${items}. ${names[1]} has ${b}. How many more does ${names[0]} have?`,
+      answer,
+      explanation: `${a} - ${b} = ${answer}. ${names[0]} has ${answer} more!`,
+      hint: "Subtract to find the difference!",
+      type: "word_sub",
+    };
+  },
+  (level: number) => {
+    const groups = Math.floor(Math.random() * 5) + 2;
+    const perGroup = Math.floor(Math.random() * 8) + 3;
+    const answer = groups * perGroup;
+    const items = ["toys", "cookies", "pencils", "balls"][Math.floor(Math.random() * 4)];
+    return {
+      prompt: `${groups} boxes, ${perGroup} ${items} each. How many total?`,
+      answer,
+      explanation: `${groups} × ${perGroup} = ${answer} total ${items}!`,
+      hint: "Multiply groups by items per group!",
+      type: "word_mult",
+    };
+  },
+  
+  // Comparison
+  (level: number) => {
+    const a = Math.floor(Math.random() * 50) + 10;
+    const b = Math.floor(Math.random() * 50) + 10;
+    const answer = Math.max(a, b);
+    return {
+      prompt: `Which is bigger: ${a} or ${b}?`,
+      answer,
+      explanation: `${answer} is bigger!`,
+      hint: "Compare the numbers!",
+      type: "comparison",
+    };
+  },
+  
+  // Double operations
+  (level: number) => {
+    const a = Math.floor(Math.random() * 10) + 5;
+    const b = Math.floor(Math.random() * 5) + 2;
+    const c = Math.floor(Math.random() * 3) + 2;
+    const answer = (a + b) * c;
+    return {
+      prompt: `(${a} + ${b}) × ${c} = ?`,
+      answer,
+      explanation: `Add: ${a} + ${b} = ${a + b}, then multiply: ${a + b} × ${c} = ${answer}!`,
+      hint: "Parentheses first!",
+      type: "double_ops",
+    };
+  },
+  (level: number) => {
+    const a = Math.floor(Math.random() * 10) + 5;
+    const b = Math.floor(Math.random() * 5) + 2;
+    const c = Math.floor(Math.random() * 3) + 2;
+    const answer = a * b + c;
+    return {
+      prompt: `${a} × ${b} + ${c} = ?`,
+      answer,
+      explanation: `Multiply: ${a} × ${b} = ${a * b}, then add: ${a * b} + ${c} = ${answer}!`,
+      hint: "Multiply first, then add!",
+      type: "double_ops2",
+    };
+  },
+  
+  // Division word problems
+  (level: number) => {
+    const total = Math.floor(Math.random() * 30) + 20;
+    const groupSize = Math.floor(Math.random() * 5) + 3;
+    const answer = Math.floor(total / groupSize);
+    const items = ["candies", "toys", "books"][Math.floor(Math.random() * 3)];
+    return {
+      prompt: `You have ${total} ${items} and make groups of ${groupSize}. How many complete groups?`,
+      answer,
+      explanation: `${total} ÷ ${groupSize} = ${answer} complete groups!`,
+      hint: "Divide to find groups!",
+      type: "word_div",
+    };
+  },
+  
+  // Even/Odd
+  (level: number) => {
+    const num = Math.floor(Math.random() * 50) + 10;
+    const answer = num % 2 === 0 ? num : num + 1;
+    return {
+      prompt: `What is the next even number after ${num}?`,
+      answer,
+      explanation: `${answer} is the next even number!`,
+      hint: "Even numbers end in 0, 2, 4, 6, or 8!",
+      type: "even_odd",
+    };
+  },
+  
+  // Rounding
+  (level: number) => {
+    const num = Math.floor(Math.random() * 90) + 10;
+    const answer = Math.round(num / 10) * 10;
+    return {
+      prompt: `Round ${num} to the nearest 10`,
+      answer,
+      explanation: `${num} rounds to ${answer}!`,
+      hint: "Look at the ones digit!",
+      type: "rounding",
+    };
+  },
+  
+  // Sum of digits
+  (level: number) => {
+    const num = Math.floor(Math.random() * 90) + 10;
+    const digits = num.toString().split('').map(Number);
+    const answer = digits.reduce((a, b) => a + b, 0);
+    return {
+      prompt: `What is the sum of digits in ${num}?`,
+      answer,
+      explanation: `${digits.join(' + ')} = ${answer}!`,
+      hint: "Add all the digits!",
+      type: "sum_digits",
+    };
+  },
+];
+
+// Generate a completely random question
+const generateRandomQuestion = (level: number): MathQuestion => {
+  const generator = puzzleGenerators[Math.floor(Math.random() * puzzleGenerators.length)];
+  const question = generator(level);
+  const difficulty = Math.min(5, Math.floor(level / 3) + 1);
+
+  return {
+    ...question,
+    options: generateOptions(question.answer, difficulty),
+    difficulty,
+  };
 };
 
 const calculateStars = (correct: number, total: number) => {
@@ -287,13 +362,10 @@ const calculateStars = (correct: number, total: number) => {
 };
 
 export const MathBlitzGame = ({ onComplete, onGameOver, onBack, simpleMode = false, topicName, highScore }: MathBlitzGameProps) => {
-  const totalQuestions = simpleMode ? 5 : 10; // Increased to 10 for more puzzles
-  const questions = useMemo(() => 
-    Array.from({ length: totalQuestions }, (_, i) => buildQuestion(simpleMode, i + 1)), 
-    [simpleMode, totalQuestions]
-  );
-  
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const questionsPerLevel = simpleMode ? 3 : 5;
+  const [level, setLevel] = useState(1);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [currentQuestion, setCurrentQuestion] = useState<MathQuestion>(() => generateRandomQuestion(1));
   const [score, setScore] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -303,69 +375,93 @@ export const MathBlitzGame = ({ onComplete, onGameOver, onBack, simpleMode = fal
   const [bestStreak, setBestStreak] = useState(0);
   const [showCelebration, setShowCelebration] = useState(false);
   const [gameComplete, setGameComplete] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [levelScore, setLevelScore] = useState(0);
   
-  // Use refs to avoid dependency issues
-  const currentQuestionRef = useRef(questions[currentIndex]);
-  const hasSelectedRef = useRef(false);
-  
-  useEffect(() => {
-    currentQuestionRef.current = questions[currentIndex];
-    hasSelectedRef.current = selectedOption !== null;
-  }, [questions, currentIndex, selectedOption]);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const isMountedRef = useRef(true);
 
-  const currentQuestion = questions[currentIndex];
-  const hasSelected = selectedOption !== null;
-
-  // Timer effect - fixed to prevent hanging
   useEffect(() => {
-    if (gameComplete) return;
-    
-    setTimeLeft(30); // Reset timer for new question
-    setSelectedOption(null);
-    setFeedback(null);
-    
-    let timerId: NodeJS.Timeout;
-    
-    const startTimer = () => {
-      timerId = setInterval(() => {
-        setTimeLeft(prev => {
-          // Check if answer was selected
-          if (hasSelectedRef.current) {
-            clearInterval(timerId);
-            return prev;
-          }
-          
-          if (prev <= 1) {
-            // Timeout
-            const question = currentQuestionRef.current;
-            setSelectedOption(-1);
-            setFeedback(`Time's up! The answer was ${question.answer}. ${question.explanation}`);
-            setStreak(0);
-            clearInterval(timerId);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
     };
+  }, []);
+
+  // Generate new question when level or index changes
+  useEffect(() => {
+    if (!gameComplete) {
+      const newQuestion = generateRandomQuestion(level);
+      setCurrentQuestion(newQuestion);
+      setTimeLeft(30 + level * 2); // More time at higher levels
+      setSelectedOption(null);
+      setFeedback(null);
+      setIsProcessing(false);
+    }
+  }, [level, currentQuestionIndex, gameComplete]);
+
+  // Timer effect
+  useEffect(() => {
+    if (gameComplete || selectedOption !== null || isProcessing) {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      return;
+    }
     
-    startTimer();
+    timerRef.current = setInterval(() => {
+      if (!isMountedRef.current) return;
+      
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          // Timeout
+          setSelectedOption(-1);
+          setFeedback(`⏰ Time's up! The answer was ${currentQuestion.answer}. ${currentQuestion.explanation}`);
+          setStreak(0);
+          setLevelScore(prev => prev - 10);
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
 
     return () => {
-      if (timerId) clearInterval(timerId);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     };
-  }, [currentIndex, gameComplete]);
+  }, [currentQuestionIndex, selectedOption, gameComplete, isProcessing, currentQuestion.answer, currentQuestion.explanation]);
 
   const handleSelectOption = (option: number) => {
-    if (hasSelected || selectedOption === -1) return;
+    if (isProcessing || selectedOption !== null) return;
+    
+    setIsProcessing(true);
     setSelectedOption(option);
+    
+    // Stop timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    
     const isCorrect = option === currentQuestion.answer;
     const timeBonus = Math.max(0, Math.floor(timeLeft * 2));
+    const levelBonus = level * 5;
     const baseScore = isCorrect ? 150 : 60;
     const streakBonus = isCorrect && streak > 0 ? streak * 10 : 0;
-    const totalPoints = baseScore + timeBonus + streakBonus;
+    const totalPoints = baseScore + timeBonus + streakBonus + (isCorrect ? levelBonus : 0);
     
     setScore(prev => prev + totalPoints);
+    setLevelScore(prev => prev + (isCorrect ? totalPoints : 0));
     
     if (isCorrect) {
       const newStreak = streak + 1;
@@ -373,193 +469,258 @@ export const MathBlitzGame = ({ onComplete, onGameOver, onBack, simpleMode = fal
       setBestStreak(prev => Math.max(prev, newStreak));
       setCorrectCount(prev => prev + 1);
       setShowCelebration(true);
-      setTimeout(() => setShowCelebration(false), 1000);
-      setFeedback(`🎉 Excellent! ${currentQuestion.explanation}${newStreak > 1 ? ` 🔥 ${newStreak} streak!` : ''}${timeBonus > 0 ? ` ⚡ +${timeBonus} speed bonus!` : ''}`);
+      setTimeout(() => setShowCelebration(false), 1500);
+      setFeedback(`🎉 Awesome! ${currentQuestion.explanation}${newStreak > 1 ? ` 🔥 ${newStreak} streak!` : ''}${timeBonus > 0 ? ` ⚡ +${timeBonus} speed!` : ''}${levelBonus > 0 ? ` ⭐ +${levelBonus} level!` : ''}`);
     } else {
       setStreak(0);
-      setFeedback(`Almost! The correct answer is ${currentQuestion.answer}. ${currentQuestion.explanation}`);
+      setFeedback(`💭 Almost! The answer is ${currentQuestion.answer}. ${currentQuestion.explanation}`);
     }
+    
+    setTimeout(() => setIsProcessing(false), 500);
   };
 
   const handleNext = () => {
-    if (!hasSelected && selectedOption !== -1) return;
+    if (isProcessing) return;
+    if (!selectedOption && selectedOption !== -1) return;
 
-    if (currentIndex === questions.length - 1) {
-      setGameComplete(true);
-      const stars = calculateStars(correctCount, questions.length);
-      const accuracy = Math.round((correctCount / questions.length) * 100);
-      const message =
-        correctCount === questions.length
-          ? "🌟 Perfect Score! You're a Math Master! 🌟"
-          : correctCount >= Math.ceil(questions.length * 0.75)
-            ? `🎯 Fantastic! ${accuracy}% accuracy - Keep that math streak going!`
-            : `💪 Great effort! ${accuracy}% correct - Review and try again for more stars!`;
-
-      const result = {
+    const isLastQuestionInLevel = currentQuestionIndex === questionsPerLevel - 1;
+    
+    if (isLastQuestionInLevel) {
+      // Level complete - check if can advance
+      const levelAccuracy = levelScore > 0 ? Math.min(100, (levelScore / (questionsPerLevel * 200)) * 100) : 0;
+      
+      if (levelAccuracy >= 60) {
+        // Advance to next level
+        setLevel(prev => prev + 1);
+        setCurrentQuestionIndex(0);
+        setLevelScore(0);
+        setSelectedOption(null);
+        setFeedback(`🎊 Level ${level} Complete! Advancing to Level ${level + 1}! 🎊`);
+        return;
+      } else {
+        // Game over
+        setGameComplete(true);
+        const stars = calculateStars(correctCount, level * questionsPerLevel);
+        const accuracy = Math.round((correctCount / (level * questionsPerLevel)) * 100);
+        
+        const result = {
         score,
         stars,
         correct: correctCount,
-        total: questions.length,
-        message: topicName
-          ? `${topicName} mastery boost: ${correctCount} / ${questions.length} correct!`
-          : `You solved ${correctCount} of ${questions.length} math puzzles! ${bestStreak > 0 ? `🔥 Best streak: ${bestStreak}!` : ''}`,
-      };
+          total: level * questionsPerLevel,
+          message: `🎮 Reached Level ${level}! ${correctCount} correct answers! ${bestStreak > 0 ? `🔥 Best streak: ${bestStreak}!` : ''}`,
+        };
 
-      if (onComplete) {
-        onComplete(result);
-      }
-      if (onGameOver) {
-        onGameOver(score);
-      }
+        setTimeout(() => {
+          if (onComplete) onComplete(result);
+          if (onGameOver) onGameOver(score);
+        }, 2000);
       return;
+      }
     }
 
-    setCurrentIndex(prev => prev + 1);
+    setCurrentQuestionIndex(prev => prev + 1);
     setSelectedOption(null);
     setFeedback(null);
   };
 
+  const totalQuestions = level * questionsPerLevel;
+  const hasSelected = selectedOption !== null;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-orange-100 p-4 relative overflow-hidden">
+      {/* Animated background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(15)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-3 h-3 bg-yellow-300/30 rounded-full animate-float"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 3}s`,
+              animationDuration: `${3 + Math.random() * 2}s`,
+            }}
+          />
+        ))}
+      </div>
+
       {onBack && (
-        <div className="max-w-2xl mx-auto mb-4">
-          <Button onClick={onBack} variant="outline" className="mb-2">
+        <div className="max-w-3xl mx-auto mb-4 relative z-10">
+          <Button 
+            onClick={onBack} 
+            variant="outline" 
+            className="mb-2 bg-white/90 backdrop-blur-sm hover:scale-105 transition-transform"
+            disabled={isProcessing}
+          >
             ← Back to Games
           </Button>
           {highScore !== undefined && (
-            <p className="text-sm text-amber-700">High Score: {highScore}</p>
+            <p className="text-sm text-purple-700 font-semibold">🏆 High Score: {highScore}</p>
           )}
         </div>
       )}
-      <Card className="border-2 border-amber-200 bg-amber-50 shadow-lg max-w-2xl mx-auto">
-        <CardHeader className="flex flex-col gap-2">
-        <CardTitle className="flex items-center gap-2 text-2xl font-bold text-amber-700">
-          <Calculator className="h-6 w-6" /> Math Puzzle Blitz
+      
+      <Card className="border-4 border-purple-300 bg-gradient-to-br from-white to-purple-50 shadow-2xl max-w-3xl mx-auto relative z-10">
+        <CardHeader className="flex flex-col gap-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-t-lg">
+          <CardTitle className="flex items-center gap-3 text-3xl font-black">
+            <div className="p-2 bg-white/20 rounded-lg">
+              <Calculator className="h-8 w-8" />
+            </div>
+            <div>
+              <div>Math Puzzle Blitz</div>
+              <div className="text-lg font-normal opacity-90">Level {level} 🚀</div>
+            </div>
         </CardTitle>
-        <CardDescription>
-          Solve math puzzles and tricky questions! {currentQuestion.type === "tricky" && "🧩 This is a tricky one!"}
+          <CardDescription className="text-white/90 text-base">
+            Solve puzzles to advance levels! {currentQuestion.type.includes("word") && "📖 Story time!"}
+            {currentQuestion.type.includes("pattern") && "🔍 Find the pattern!"}
         </CardDescription>
+        </CardHeader>
+        
+        <div className="p-4 bg-gradient-to-r from-yellow-100 to-orange-100 border-b-2 border-yellow-300">
         <div className="flex flex-wrap items-center gap-3 text-sm">
-          <span className="rounded-full bg-white px-3 py-1 font-semibold text-amber-700 shadow flex items-center gap-1">
-            <Trophy className="h-4 w-4" /> Score: {score}
-          </span>
-          <span className="rounded-full bg-white px-3 py-1 text-amber-600 shadow">
-            Puzzle: {currentIndex + 1} / {questions.length}
-          </span>
-          <span className={cn(
-            "inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 shadow",
-            timeLeft <= 5 ? "text-red-600 animate-pulse" : "text-amber-600"
-          )}>
-            <Timer className="h-4 w-4" /> {timeLeft}s
-          </span>
-          {streak > 0 && (
-            <span className="inline-flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1 text-orange-700 shadow animate-pulse">
-              <Zap className="h-4 w-4" /> 🔥 {streak} Streak!
+            <span className="rounded-full bg-white px-4 py-2 font-bold text-purple-700 shadow-lg flex items-center gap-2 hover:scale-105 transition-transform">
+              <Trophy className="h-5 w-5 text-yellow-500" /> {score}
             </span>
-          )}
-          <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-amber-600 shadow">
-            <Lightbulb className="h-4 w-4" /> {currentQuestion.hint}
+            <span className="rounded-full bg-white px-4 py-2 text-purple-600 shadow-lg font-semibold">
+              Puzzle {currentQuestionIndex + 1}/{questionsPerLevel}
+            </span>
+            <span className={cn(
+              "inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-lg font-bold transition-all",
+              timeLeft <= 5 ? "text-red-600 animate-pulse scale-110" : "text-purple-600"
+            )}>
+              <Timer className="h-5 w-5" /> {timeLeft}s
+            </span>
+            {streak > 0 && (
+              <span className="inline-flex items-center gap-2 rounded-full bg-orange-200 px-4 py-2 text-orange-800 shadow-lg font-bold animate-pulse">
+                <Zap className="h-5 w-5" /> 🔥 {streak} Streak!
+          </span>
+            )}
+            <span className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-4 py-2 text-blue-700 shadow-lg">
+              <Lightbulb className="h-5 w-5" /> {currentQuestion.hint}
           </span>
         </div>
-        <Progress value={((currentIndex + (hasSelected ? 1 : 0)) / questions.length) * 100} className="h-2 bg-amber-100" />
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        {showCelebration && (
-          <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50">
-            <div className="text-6xl animate-bounce">🎉</div>
-          </div>
-        )}
-        <div className="rounded-xl bg-white/80 p-5 text-center shadow-inner relative overflow-hidden">
-          {showCelebration && (
-            <div className="absolute inset-0 bg-gradient-to-r from-yellow-200 via-orange-200 to-yellow-200 animate-pulse opacity-50" />
-          )}
-          <p className="text-2xl font-bold text-amber-800 relative z-10">{currentQuestion.prompt}</p>
-          {currentQuestion.type === "tricky" && (
-            <p className="text-xs text-amber-600 mt-2">🧩 Tricky Puzzle</p>
-          )}
+          <Progress 
+            value={((currentQuestionIndex + (hasSelected ? 1 : 0)) / questionsPerLevel) * 100} 
+            className="h-3 bg-white/50 mt-3 shadow-inner" 
+          />
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {currentQuestion.options.map(option => {
+        
+        <CardContent className="flex flex-col gap-4 p-6">
+          {showCelebration && (
+            <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50">
+              <div className="text-8xl animate-bounce">🎉</div>
+            </div>
+          )}
+          
+          <div className="rounded-2xl bg-gradient-to-br from-yellow-50 to-orange-50 p-6 text-center shadow-xl relative overflow-hidden border-4 border-yellow-300">
+            {showCelebration && (
+              <div className="absolute inset-0 bg-gradient-to-r from-yellow-200 via-orange-200 to-yellow-200 animate-pulse opacity-50" />
+            )}
+            <p className="text-3xl font-black text-purple-800 relative z-10 mb-2">{currentQuestion.prompt}</p>
+            {currentQuestion.type.includes("tricky") && (
+              <p className="text-sm text-purple-600 font-bold">🧩 Tricky Puzzle!</p>
+            )}
+          </div>
+          
+          <div className="grid gap-4 sm:grid-cols-2">
+            {currentQuestion.options.map((option, idx) => {
             const isSelected = option === selectedOption;
             const isCorrect = option === currentQuestion.answer;
-            const isWrong = isSelected && !isCorrect;
+              const isWrong = isSelected && !isCorrect;
             return (
               <Button
-                key={option}
+                  key={`${option}-${idx}`}
                 variant="outline"
-                disabled={hasSelected || selectedOption === -1}
+                  disabled={hasSelected || selectedOption === -1 || isProcessing}
                 className={cn(
-                  "h-16 justify-center rounded-xl border-2 text-lg font-semibold shadow transition-all",
-                  !hasSelected && selectedOption !== -1 && "border-amber-200 bg-white text-amber-800 hover:scale-105 hover:shadow-lg",
-                  isSelected && isCorrect && "border-emerald-400 bg-emerald-50 text-emerald-700 scale-105 animate-pulse",
-                  isWrong && "border-rose-300 bg-rose-50 text-rose-600",
-                  (hasSelected || selectedOption === -1) && !isSelected && !isCorrect && "opacity-50",
-                  selectedOption === -1 && option === currentQuestion.answer && "border-blue-400 bg-blue-50 text-blue-700",
+                    "h-20 justify-center rounded-2xl border-4 text-2xl font-black shadow-lg transition-all duration-200",
+                    !hasSelected && selectedOption !== -1 && !isProcessing && 
+                      "border-purple-300 bg-white text-purple-800 hover:scale-110 hover:shadow-2xl hover:border-purple-500 active:scale-95",
+                    isSelected && isCorrect && 
+                      "border-green-500 bg-green-100 text-green-800 scale-110 animate-pulse shadow-2xl",
+                    isWrong && 
+                      "border-red-400 bg-red-100 text-red-800 scale-105",
+                    (hasSelected || selectedOption === -1 || isProcessing) && !isSelected && !isCorrect && 
+                      "opacity-50 cursor-not-allowed",
+                    selectedOption === -1 && option === currentQuestion.answer && 
+                      "border-blue-500 bg-blue-100 text-blue-800",
                 )}
                 onClick={() => handleSelectOption(option)}
               >
+                  <span className="flex items-center gap-2">
                 {option}
-                {isSelected && isCorrect && " ✓"}
-                {isWrong && " ✗"}
+                    {isSelected && isCorrect && " ✓"}
+                    {isWrong && " ✗"}
+                  </span>
               </Button>
             );
           })}
         </div>
+          
         {feedback && (
-          <div className={cn(
-            "rounded-xl border p-4 text-sm shadow animate-fade-in",
-            selectedOption === currentQuestion.answer 
-              ? "border-emerald-300 bg-emerald-50 text-emerald-700" 
-              : "border-amber-200 bg-white/90 text-amber-700"
-          )}>
+            <div className={cn(
+              "rounded-2xl border-4 p-5 text-base font-semibold shadow-xl animate-fade-in",
+              selectedOption === currentQuestion.answer 
+                ? "border-green-400 bg-green-50 text-green-800" 
+                : "border-purple-300 bg-purple-50 text-purple-800"
+            )}>
             {feedback}
           </div>
         )}
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-sm text-amber-700">
-            {!hasSelected && selectedOption !== -1 
-              ? `⚡ Quick answers earn bonus points! ${timeLeft > 20 ? "You're doing great!" : "Time is running out!"}`
-              : hasSelected 
-                ? "Great thinking!" 
-                : "Time's up! Check the answer above."}
+          
+          <div className="flex items-center justify-between gap-3 pt-2">
+            <p className="text-sm text-purple-700 font-semibold">
+              {!hasSelected && selectedOption !== -1 
+                ? `⚡ Quick answers = bonus points! ${timeLeft > 20 ? "You're awesome! 🌟" : "Hurry! ⏰"}`
+                : hasSelected 
+                  ? "Great thinking! 🎯" 
+                  : "Time's up! Check the answer above."}
           </p>
           <Button
             onClick={handleNext}
-            disabled={!hasSelected && selectedOption !== -1}
-            className="rounded-full bg-amber-500 px-6 py-2 text-white shadow hover:bg-amber-600 disabled:opacity-50"
-          >
-            {gameComplete 
-              ? "🎉 View Results" 
-              : currentIndex === questions.length - 1 
-                ? "🏁 Finish Mission" 
-                : "➡️ Next Puzzle"}
+              disabled={(!hasSelected && selectedOption !== -1) || isProcessing}
+              className="rounded-full bg-gradient-to-r from-purple-500 to-pink-500 px-8 py-3 text-white font-bold text-lg shadow-xl hover:shadow-2xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {gameComplete 
+                ? "🎉 View Results" 
+                : currentQuestionIndex === questionsPerLevel - 1 
+                  ? level >= 3 ? "🏁 Finish Game" : "➡️ Next Level" 
+                  : "➡️ Next Puzzle"}
           </Button>
         </div>
-        {gameComplete && (
-          <div className="rounded-xl border-2 border-yellow-400 bg-gradient-to-br from-yellow-50 to-orange-50 p-6 text-center shadow-lg animate-fade-in">
-            <div className="text-4xl mb-2">🎉</div>
-            <h3 className="text-xl font-bold text-amber-800 mb-2">Puzzle Mission Complete!</h3>
-            <div className="flex justify-center gap-4 text-sm">
-              <div>
-                <Star className="h-5 w-5 text-yellow-500 mx-auto mb-1" />
-                <p className="font-semibold">{correctCount}/{questions.length}</p>
-                <p className="text-xs text-amber-600">Correct</p>
-              </div>
-              <div>
-                <Trophy className="h-5 w-5 text-amber-500 mx-auto mb-1" />
-                <p className="font-semibold">{score}</p>
-                <p className="text-xs text-amber-600">Score</p>
-              </div>
-              {bestStreak > 0 && (
-                <div>
-                  <Zap className="h-5 w-5 text-orange-500 mx-auto mb-1" />
-                  <p className="font-semibold">{bestStreak}</p>
-                  <p className="text-xs text-amber-600">Best Streak</p>
+          
+          {gameComplete && (
+            <div className="rounded-2xl border-4 border-yellow-400 bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50 p-8 text-center shadow-2xl animate-fade-in">
+              <div className="text-6xl mb-4 animate-bounce">🎉</div>
+              <h3 className="text-3xl font-black text-purple-800 mb-4">Amazing Game!</h3>
+              <div className="flex justify-center gap-6 text-base">
+                <div className="bg-white/80 rounded-xl p-4 shadow-lg">
+                  <Star className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
+                  <p className="font-black text-2xl">{correctCount}</p>
+                  <p className="text-xs text-purple-600 font-semibold">Correct</p>
                 </div>
-              )}
+                <div className="bg-white/80 rounded-xl p-4 shadow-lg">
+                  <Trophy className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+                  <p className="font-black text-2xl">{score}</p>
+                  <p className="text-xs text-purple-600 font-semibold">Score</p>
+                </div>
+                <div className="bg-white/80 rounded-xl p-4 shadow-lg">
+                  <Rocket className="h-8 w-8 text-purple-500 mx-auto mb-2" />
+                  <p className="font-black text-2xl">Level {level}</p>
+                  <p className="text-xs text-purple-600 font-semibold">Reached</p>
+                </div>
+                {bestStreak > 0 && (
+                  <div className="bg-white/80 rounded-xl p-4 shadow-lg">
+                    <Zap className="h-8 w-8 text-orange-500 mx-auto mb-2" />
+                    <p className="font-black text-2xl">{bestStreak}</p>
+                    <p className="text-xs text-purple-600 font-semibold">Best Streak</p>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
       </CardContent>
     </Card>
     </div>
