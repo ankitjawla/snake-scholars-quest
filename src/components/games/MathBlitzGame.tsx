@@ -113,7 +113,7 @@ const calculateStars = (correct: number, total: number) => {
 
 export const MathBlitzGame = ({ onComplete, onGameOver, onBack, simpleMode = false, topicName, highScore }: MathBlitzGameProps) => {
   const totalQuestions = simpleMode ? 5 : 8;
-  const questions = useMemo(() => Array.from({ length: totalQuestions }, () => buildQuestion(simpleMode)), [simpleMode]);
+  const questions = useMemo(() => Array.from({ length: totalQuestions }, () => buildQuestion(simpleMode)), [simpleMode, totalQuestions]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
